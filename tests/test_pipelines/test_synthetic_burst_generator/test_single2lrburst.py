@@ -1,18 +1,15 @@
-from typing import get_args
-
-import torch
 from hypothesis import given
 from hypothesis import strategies as st
+from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
 
 from mfsr_utils.pipelines.image_transformation_params import ImageTransformationParams
 from mfsr_utils.pipelines.synthetic_burst_generator import single2lrburst
 from mfsr_utils.pipelines.types import InterpolationType
-from hypothesis_torch_utils.strategies._3hw_tensors import _3HW_TENSORS
 
 
 @given(
-    image=_3HW_TENSORS(),
+    image=sized_3hw_tensors(),
     burst_size=st.just(2),
     # burst_size=st.integers(min_value=1, max_value=20),
     downsample_factor=st.just(1.0),
@@ -28,7 +25,7 @@ def test_single2lrburst_burst_size_matches(
     transformation_params: None | ImageTransformationParams,
     interpolation_type: InterpolationType,
 ) -> None:
-    burst_images, flow_vectors = single2lrburst(
+    burst_images, _ = single2lrburst(
         image,
         burst_size,
         downsample_factor,
@@ -40,7 +37,7 @@ def test_single2lrburst_burst_size_matches(
 
 
 @given(
-    image=_3HW_TENSORS(),
+    image=sized_3hw_tensors(),
     burst_size=st.just(2),
     # burst_size=st.integers(min_value=1, max_value=20),
     downsample_factor=st.just(1.0),
@@ -75,7 +72,7 @@ def test_single2lrburst_flow_shape_invariant(
 
 
 @given(
-    image=_3HW_TENSORS(),
+    image=sized_3hw_tensors(),
     burst_size=st.just(2),
     # burst_size=st.integers(min_value=1, max_value=20),
     downsample_factor=st.just(1.0),
@@ -107,7 +104,7 @@ def test_single2lrburst_device_invariant(
 
 
 @given(
-    image=_3HW_TENSORS(),
+    image=sized_3hw_tensors(),
     burst_size=st.just(2),
     # burst_size=st.integers(min_value=1, max_value=20),
     downsample_factor=st.just(1.0),

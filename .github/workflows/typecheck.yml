@@ -18,8 +18,8 @@ jobs:
           cache: pip
           cache-dependency-path: "**/pyproject.toml"
       - run: python3 -m pip install pip --upgrade
-      - run: python3 -m pip install --pre --extra-index-url https://download.pytorch.org/whl/nightly/cpu '.[typecheck]'
-      - run: mypy ./hypothesis_torch_utils
+      - run: python3 -m pip install --pre --extra-index-url https://download.pytorch.org/whl/nightly/cpu '.[typecheck,test]'
+      - run: mypy ./mfsr_utils ./tests
 
   pyright:
     runs-on: ubuntu-22.04
@@ -31,5 +31,6 @@ jobs:
           cache: pip
           cache-dependency-path: "**/pyproject.toml"
       - run: python3 -m pip install pip --upgrade
-      - run: python3 -m pip install --pre --extra-index-url https://download.pytorch.org/whl/nightly/cpu '.[typecheck]'
-      - run: pyright ./hypothesis_torch_utils
+      - run: python3 -m pip install --pre --extra-index-url https://download.pytorch.org/whl/nightly/cpu '.[typecheck,test]'
+      - run: pyright ./mfsr_utils ./tests
+      - run: pyright --verifytypes mfsr_utils --ignoreexternal --pythonversion 3.10 --pythonplatform Linux --verbose

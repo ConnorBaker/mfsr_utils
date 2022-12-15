@@ -52,7 +52,7 @@ class RgbGains:
         # Prevents dimming of saturated pixels by smoothly masking gains near white.
         gray = image.mean(dim=0, keepdim=True)
         inflection = 0.9
-        mask = ((gray - inflection).clamp(0.0) / (1.0 - inflection)) ** 2.0
+        mask = ((gray - inflection) / (1.0 - inflection)).clamp(0.0) ** 2.0
 
-        safe_gains = torch.max(mask + (1.0 - mask) * gains, gains)
+        safe_gains = torch.max(input=mask + (1.0 - mask) * gains, other=gains)  # type: ignore
         return image * safe_gains

@@ -8,7 +8,7 @@ def get_translate_mat(
     translation: tuple[float, float],
     dtype: torch.dtype = torch.float64,
     device: torch.device = torch.device("cpu"),
-) -> torch.Tensor:
+) -> Tensor:
     """Generates a translation matrix corresponding to the input translation parameters"""
     translate_x, translate_y = translation
 
@@ -24,7 +24,7 @@ def get_shear_mat(
     shear_values: tuple[float, float],
     dtype: torch.dtype = torch.float64,
     device: torch.device = torch.device("cpu"),
-) -> torch.Tensor:
+) -> Tensor:
     """Generates a shear matrix corresponding to the input shear parameters"""
     image_y, image_x = image_shape
     shear_x, shear_y = shear_values
@@ -45,7 +45,7 @@ def get_rotate_mat(
     theta: float,
     dtype: torch.dtype = torch.float64,
     device: torch.device = torch.device("cpu"),
-) -> torch.Tensor:
+) -> Tensor:
     """Generates a rotation matrix corresponding to the input rotation angle, around the center of
     the image"""
     image_y, image_x = image_shape
@@ -78,7 +78,7 @@ def get_scale_mat(
     scale_factors: tuple[float, float],
     dtype: torch.dtype = torch.float64,
     device: torch.device = torch.device("cpu"),
-) -> torch.Tensor:
+) -> Tensor:
     """Generates a scaling matrix corresponding to the input scaling factors"""
     scale_x, scale_y = scale_factors
 
@@ -87,26 +87,6 @@ def get_scale_mat(
         dtype=dtype,
         device=device,
     )
-
-
-def _get_tmat_reference(
-    image_shape: tuple[int, int],
-    translation: tuple[float, float],
-    theta: float,
-    shear_values: tuple[float, float],
-    scale_factors: tuple[float, float],
-    dtype: torch.dtype = torch.float64,
-    device: torch.device = torch.device("cpu"),
-) -> Tensor:
-    """Generates a transformation matrix corresponding to the input transformation parameters"""
-    translate_mat = get_translate_mat(translation, dtype, device)
-    shear_mat = get_shear_mat(image_shape, shear_values, dtype, device)
-    rotate_mat = get_rotate_mat(image_shape, theta, dtype, device)
-    scale_mat = get_scale_mat(scale_factors, dtype, device)
-
-    expected = scale_mat.mm(rotate_mat).mm(shear_mat).mm(translate_mat)
-    expected = expected[:2, :]
-    return expected
 
 
 def get_tmat(
@@ -132,7 +112,7 @@ def get_tmat(
     # Translate the image by the given translation factors. Then shears the image using the given
     # shear factors, about the center of the image.
     # See https://lectureloops.com/shear-transformation/ for more.
-    # It is shear @ translate from pure_python_get_tmat.
+    # It is get_shear_mat(image_shape, shear_values).mm(get_translate_mat(translation)).
     shear_after_translate = torch.tensor(
         [
             [1.0, shear_x, shear_x * translate_y - 0.5 * shear_x * image_x + translate_x],
@@ -149,8 +129,7 @@ def get_tmat(
     #   2. Rotate the image about the origin
     #   3. Translate the center of the image back to where it was
     #   4. Scale by scale factors
-    # It is scale @ unshift_center_to_origin @ rotate @ shift_center_to_origin from
-    # pure_python_get_tmat.
+    # It is get_scale_mat(scale_factors).mm(get_rotate_mat(image_shape, theta)).
     scale_after_rotate = torch.tensor(
         [
             [

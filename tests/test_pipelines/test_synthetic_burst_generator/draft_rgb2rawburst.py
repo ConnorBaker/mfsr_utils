@@ -1,21 +1,19 @@
-from typing import get_args
-
 import torch
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.strategies._internal.core import RandomSeeder
+from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
+from typing_extensions import get_args
 
 from mfsr_utils.pipelines.image_processing_params import ImageProcessingParams
 from mfsr_utils.pipelines.image_transformation_params import ImageTransformationParams
-from mfsr_utils.pipelines.synthetic_burst_generator import rgb2rawburst
 from mfsr_utils.pipelines.types import InterpolationType
-from hypothesis_torch_utils.strategies._3hw_tensors import _3HW_TENSORS
 
 
 @given(
     rs=st.random_module(),
-    image=_3HW_TENSORS(dtype=torch.float32),
+    image=sized_3hw_tensors(dtype=torch.float32),
     burst_size=st.integers(min_value=1, max_value=20),
     downsample_factor=st.floats(0.25, 1.0),
     burst_transformation_params=st.none(),  # TODO: Add transformation params
@@ -58,12 +56,4 @@ def test_rgb2rawburst(
             - Flow vectors
             - Meta info
     """
-    image_burst, image, image_burst_rgb, flow_vectors, meta_info = rgb2rawburst(
-        image,
-        burst_size,
-        downsample_factor,
-        burst_transformation_params,
-        image_processing_params,
-        interpolation_type,
-    )
     assert False, "TODO: Finish writing test"

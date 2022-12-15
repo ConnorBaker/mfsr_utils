@@ -5,7 +5,6 @@ import numpy as np
 import numpy.typing as npt
 import torch
 from torch import Tensor
-from typing_extensions import Literal
 
 """ Based on http://timothybrooks.com/tech/unprocessing
 Functions for forward and inverse camera pipeline. All functions input a torch float tensor of
@@ -141,31 +140,6 @@ def apply_ccm(image: Tensor, ccm: Tensor) -> Tensor:
     return ccm.mm(image.view(3, -1)).view(image.shape).clamp(0.0, 1.0)
 
 
-def _mosaic_reference(image: Tensor, mode: Literal["grbg", "rggb"] = "rggb") -> Tensor:
-    """Extracts RGGB Bayer planes from an RGB image."""
-    shape = image.shape
-    if image.dim() == 3:
-        image = image.unsqueeze(0)
-
-    if mode == "rggb":
-        red = image[:, 0, 0::2, 0::2]
-        green_red = image[:, 1, 0::2, 1::2]
-        green_blue = image[:, 1, 1::2, 0::2]
-        blue = image[:, 2, 1::2, 1::2]
-        image = torch.stack((red, green_red, green_blue, blue), dim=1)
-    elif mode == "grbg":
-        green_red = image[:, 1, 0::2, 0::2]
-        red = image[:, 0, 0::2, 1::2]
-        blue = image[:, 2, 0::2, 1::2]
-        green_blue = image[:, 1, 1::2, 1::2]
-        image = torch.stack((green_red, red, blue, green_blue), dim=1)
-
-    if len(shape) == 3:
-        return image.view((4, shape[-2] // 2, shape[-1] // 2))
-    else:
-        return image.view((-1, 4, shape[-2] // 2, shape[-1] // 2))
-
-
 def mosaic(image: Tensor) -> Tensor:
     """Extracts RGGB Bayer planes from an RGB image of shape (3, H, W) and returns a 3D tensor of
     shape (4, H // 2, W // 2).
@@ -213,7 +187,12 @@ def demosaic(image: Tensor) -> Tensor:
     im_sc_np: npt.NDArray[np.uint8] = im_sc.cpu().numpy()
 
     out: list[Tensor] = [
-        torch.from_numpy(cv.cvtColor(im, cv.COLOR_BAYER_BG2RGB)).permute(2, 0, 1) / 255.0
+        (
+            torch.from_numpy(cv.cvtColor(im, cv.COLOR_BAYER_BG2RGB)).permute(  # type: ignore
+                2, 0, 1
+            )
+            / 255.0
+        )
         for im in im_sc_np
     ]
 

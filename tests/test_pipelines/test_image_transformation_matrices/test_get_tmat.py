@@ -1,22 +1,53 @@
 from typing import Callable
 
+import cv2
 import numpy as np
 import numpy.typing as npt
 import pytest
 import torch
-import torch._dynamo.config
-import torch._inductor.config
 from hypothesis import given
 from hypothesis import strategies as st
 
-from mfsr_utils.pipelines.image_transformation_matrices import (
-    _get_tmat_reference as torch_get_tmat_reference,
-)
-from mfsr_utils.pipelines.image_transformation_matrices import get_tmat as torch_get_tmat
-from mfsr_utils.pipelines.synthetic_burst_generator import get_tmat
+from mfsr_utils.pipelines.image_transformation_matrices import get_tmat as get_tmat
 
 
-def given_get_tmat_args(f):
+def _get_tmat_reference(
+    image_shape: tuple[int, int],
+    translation: tuple[float, float],
+    theta: float,
+    shear_values: tuple[float, float],
+    scale_factors: tuple[float, float],
+) -> npt.NDArray[np.float64]:
+    """Generates a transformation matrix corresponding to the input transformation parameters"""
+    im_h, im_w = image_shape
+
+    t_mat = np.identity(3)
+
+    t_mat[0, 2] = translation[0]
+    t_mat[1, 2] = translation[1]
+    t_rot = cv2.getRotationMatrix2D((im_w * 0.5, im_h * 0.5), theta, 1.0)  # type: ignore
+    t_rot = np.concatenate((t_rot, np.array([0.0, 0.0, 1.0]).reshape(1, 3)))  # type: ignore
+
+    t_shear = np.array(
+        [
+            [1.0, shear_values[0], -shear_values[0] * 0.5 * im_w],
+            [shear_values[1], 1.0, -shear_values[1] * 0.5 * im_h],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+
+    t_scale = np.array(
+        [[scale_factors[0], 0.0, 0.0], [0.0, scale_factors[1], 0.0], [0.0, 0.0, 1.0]]
+    )
+
+    t_mat = t_scale @ t_rot @ t_shear @ t_mat
+
+    t_mat = t_mat[:2, :]
+
+    return t_mat
+
+
+def given_get_tmat_args(f: Callable[..., None]):
     return given(
         image_shape=st.tuples(
             st.integers(min_value=32, max_value=1000),
@@ -79,8 +110,8 @@ def test_get_tmat_dtype(
 @pytest.mark.parametrize(
     "impl",
     [
-        torch_get_tmat_reference,
-        torch_get_tmat,
+        _get_tmat_reference,
+        get_tmat,
     ],
 )
 @given_get_tmat_args
@@ -112,8 +143,8 @@ def test_get_tmat_shape_eq_impl_shape(
 @pytest.mark.parametrize(
     "impl",
     [
-        torch_get_tmat_reference,
-        torch_get_tmat,
+        _get_tmat_reference,
+        get_tmat,
     ],
 )
 @given_get_tmat_args
@@ -141,7 +172,7 @@ def test_get_tmat_dtype_eq_impl_dtype(
     )
 
     if isinstance(actual_tmat, torch.Tensor):
-        expected = torch.from_numpy(expected_tmat).dtype
+        expected = torch.from_numpy(expected_tmat).dtype  # type: ignore
     else:
         expected = expected_tmat.dtype
 
@@ -153,8 +184,8 @@ def test_get_tmat_dtype_eq_impl_dtype(
 @pytest.mark.parametrize(
     "impl",
     [
-        torch_get_tmat_reference,
-        torch_get_tmat,
+        _get_tmat_reference,
+        get_tmat,
     ],
 )
 @given_get_tmat_args
@@ -181,7 +212,9 @@ def test_get_tmat_values_eq_impl_values(
         scale_factors,
     )
     if isinstance(actual, torch.Tensor):
-        expected = torch.from_numpy(expected).to(device=actual.device, dtype=actual.dtype)
+        expected = torch.from_numpy(expected).to(  # type: ignore
+            device=actual.device, dtype=actual.dtype
+        )
         assert torch.allclose(expected, actual), f"{expected} != {actual}"
     else:
-        assert np.allclose(expected, actual), f"{expected} != {actual}"
+        assert np.allclose(expected, actual), f"{expected} != {actual}"  # type: ignore

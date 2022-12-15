@@ -1,9 +1,9 @@
 import torch
 from hypothesis import given
+from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
 
 from mfsr_utils.pipelines.camera import gamma_compression, gamma_expansion
-from hypothesis_torch_utils.strategies._3hw_tensors import _3HW_TENSORS
 
 # Property-based tests which ensure:
 # - gamma_expansion is invariant with respect to shape
@@ -16,7 +16,7 @@ from hypothesis_torch_utils.strategies._3hw_tensors import _3HW_TENSORS
 # - gamma_compression is the inverse of gamma_expansion (roughly)
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_gamma_expansion_shape_invariance(image: Tensor) -> None:
     """
     Tests that gamma_expansion is invariant with respect to shape.
@@ -29,7 +29,7 @@ def test_gamma_expansion_shape_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_gamma_compression_shape_invariance(image: Tensor) -> None:
     """
     Tests that gamma_compression is invariant with respect to shape.
@@ -42,7 +42,7 @@ def test_gamma_compression_shape_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_gamma_expansion_dtype_invariance(image: Tensor) -> None:
     """
     Tests that gamma_expansion is invariant with respect to dtype.
@@ -55,7 +55,7 @@ def test_gamma_expansion_dtype_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_gamma_compression_dtype_invariance(image: Tensor) -> None:
     """
     Tests that gamma_compression is invariant with respect to dtype.
@@ -68,7 +68,7 @@ def test_gamma_compression_dtype_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_gamma_expansion_device_invariance(image: Tensor) -> None:
     """
     Tests that gamma_expansion is invariant with respect to device.
@@ -81,7 +81,7 @@ def test_gamma_expansion_device_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_gamma_compression_device_invariance(image: Tensor) -> None:
     """
     Tests that gamma_compression is invariant with respect to device.
@@ -94,7 +94,7 @@ def test_gamma_compression_device_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_gamma_expansion_is_inverse_of_gamma_compression(image: Tensor) -> None:
     """
     Tests that gamma_expansion is the inverse of gamma_compression (roughly).
@@ -107,7 +107,7 @@ def test_gamma_expansion_is_inverse_of_gamma_compression(image: Tensor) -> None:
     assert torch.allclose(expected, actual, rtol=1e-2, atol=1e-3)
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_gamma_compression_is_inverse_of_gamma_expansion(image: Tensor) -> None:
     """
     Tests that gamma_compression is the inverse of gamma_expansion (roughly).

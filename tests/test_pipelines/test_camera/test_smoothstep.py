@@ -1,10 +1,10 @@
 import torch
 from hypothesis import given
+from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
 from torch.nn import functional as F
 
 from mfsr_utils.pipelines.camera import apply_smoothstep, invert_smoothstep
-from hypothesis_torch_utils.strategies._3hw_tensors import _3HW_TENSORS
 
 # Property-based tests which ensure:
 # - apply_smoothstep is invariant with respect to shape
@@ -16,7 +16,7 @@ from hypothesis_torch_utils.strategies._3hw_tensors import _3HW_TENSORS
 # - invert_smoothstep is the inverse of apply_smoothstep (roughly)
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_apply_smoothstep_shape_invariance(image: Tensor) -> None:
     """
     Tests that apply_smoothstep() is invariant with respect to the image shape.
@@ -29,7 +29,7 @@ def test_apply_smoothstep_shape_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_invert_smoothstep_shape_invariance(image: Tensor) -> None:
     """
     Tests that invert_smoothstep() is invariant with respect to the image shape.
@@ -42,7 +42,7 @@ def test_invert_smoothstep_shape_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_apply_smoothstep_dtype_invariance(image: Tensor) -> None:
     """
     Tests that apply_smoothstep() is invariant with respect to the image dtype.
@@ -55,7 +55,7 @@ def test_apply_smoothstep_dtype_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_invert_smoothstep_dtype_invariance(image: Tensor) -> None:
     """
     Tests that invert_smoothstep() is invariant with respect to the image dtype.
@@ -68,7 +68,7 @@ def test_invert_smoothstep_dtype_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_apply_smoothstep_device_invariance(image: Tensor) -> None:
     """
     Tests that apply_smoothstep() is invariant with respect to the image device.
@@ -81,7 +81,7 @@ def test_apply_smoothstep_device_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_invert_smoothstep_device_invariance(image: Tensor) -> None:
     """
     Tests that invert_smoothstep() is invariant with respect to the image device.
@@ -94,7 +94,7 @@ def test_invert_smoothstep_device_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_invert_smoothstep_is_inverse_of_apply_smoothstep(image: Tensor) -> None:
     """
     Tests that invert_smoothstep() is the inverse of apply_smoothstep().

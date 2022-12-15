@@ -1,9 +1,36 @@
 import torch
 from hypothesis import given
+from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
+from typing_extensions import Literal
 
-from mfsr_utils.pipelines.camera import _mosaic_reference, demosaic, mosaic
-from hypothesis_torch_utils.strategies._3hw_tensors import _3HW_TENSORS
+from mfsr_utils.pipelines.camera import demosaic, mosaic
+
+
+def _mosaic_reference(image: Tensor, mode: Literal["grbg", "rggb"] = "rggb") -> Tensor:
+    """Extracts RGGB Bayer planes from an RGB image."""
+    shape = image.shape
+    if image.dim() == 3:
+        image = image.unsqueeze(0)
+
+    if mode == "rggb":
+        red = image[:, 0, 0::2, 0::2]
+        green_red = image[:, 1, 0::2, 1::2]
+        green_blue = image[:, 1, 1::2, 0::2]
+        blue = image[:, 2, 1::2, 1::2]
+        image = torch.stack((red, green_red, green_blue, blue), dim=1)
+    elif mode == "grbg":
+        green_red = image[:, 1, 0::2, 0::2]
+        red = image[:, 0, 0::2, 1::2]
+        blue = image[:, 2, 0::2, 1::2]
+        green_blue = image[:, 1, 1::2, 1::2]
+        image = torch.stack((green_red, red, blue, green_blue), dim=1)
+
+    if len(shape) == 3:
+        return image.view((4, shape[-2] // 2, shape[-1] // 2))
+    else:
+        return image.view((-1, 4, shape[-2] // 2, shape[-1] // 2))
+
 
 # Property-based tests which ensure:
 # - The mosaiced image has four channels
@@ -16,7 +43,7 @@ from hypothesis_torch_utils.strategies._3hw_tensors import _3HW_TENSORS
 # - The demosaiced image is on the same device as the original image
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_mosaic_has_four_channels(image: Tensor) -> None:
     """
     Tests that the mosaiced image has four channels.
@@ -29,7 +56,7 @@ def test_mosaic_has_four_channels(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_mosaic_has_half_height(image: Tensor) -> None:
     """
     Tests that the mosaiced image is half the height of the original image.
@@ -42,7 +69,7 @@ def test_mosaic_has_half_height(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_mosaic_has_half_width(image: Tensor) -> None:
     """
     Tests that the mosaiced image is half the width of the original image.
@@ -55,7 +82,7 @@ def test_mosaic_has_half_width(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_mosaic_dtype_invariance(image: Tensor) -> None:
     """
     Tests that the mosaiced image has the same dtype as the original image.
@@ -68,7 +95,7 @@ def test_mosaic_dtype_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_mosaic_device_invariance(image: Tensor) -> None:
     """
     Tests that the mosaiced image is on the same device as the original image.
@@ -81,7 +108,7 @@ def test_mosaic_device_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_demosaic_shape_invariance(image: Tensor) -> None:
     """
     Tests that the demosaiced image has the same shape as the original image.
@@ -95,7 +122,7 @@ def test_demosaic_shape_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_demosaic_dtype_invariance(image: Tensor) -> None:
     """
     Tests that the demosaiced image has the same dtype as the original image.
@@ -109,7 +136,7 @@ def test_demosaic_dtype_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_demosaic_device_invariance(image: Tensor) -> None:
     """
     Tests that the demosaiced image is on the same device as the original image.
@@ -123,7 +150,7 @@ def test_demosaic_device_invariance(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_mosaic_dtype_matches_mosaic_reference_dtype(image: Tensor) -> None:
     """
     Tests that the mosaiced image has the same dtype as the original image.
@@ -136,7 +163,7 @@ def test_mosaic_dtype_matches_mosaic_reference_dtype(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_mosaic_device_matches_mosaic_reference_device(image: Tensor) -> None:
     """
     Tests that the mosaiced image is on the same device as the original image.
@@ -149,7 +176,7 @@ def test_mosaic_device_matches_mosaic_reference_device(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_mosaic_shape_matches_mosaic_reference_shape(image: Tensor) -> None:
     """
     Tests that the mosaiced image has the same shape as the original image.
@@ -162,7 +189,7 @@ def test_mosaic_shape_matches_mosaic_reference_shape(image: Tensor) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS())
+@given(image=sized_3hw_tensors())
 def test_mosaic_values_match_mosaic_reference_values(image: Tensor) -> None:
     """
     Tests that the mosaiced image has the same values as the original image.

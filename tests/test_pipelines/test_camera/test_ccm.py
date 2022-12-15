@@ -2,15 +2,12 @@ import torch
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.strategies._internal.core import RandomSeeder
+from hypothesis_torch_utils.strategies.devices_and_dtypes import DeviceAndDType, devices_and_dtypes
+from hypothesis_torch_utils.strategies.dtypes import torch_float_dtypes
+from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
 
 from mfsr_utils.pipelines.camera import apply_ccm, random_ccm
-from hypothesis_torch_utils.strategies._3hw_tensors import _3HW_TENSORS
-from hypothesis_torch_utils.strategies.devices_and_dtypes import (
-    DeviceAndDType,
-    devices_and_dtypes,
-)
-from hypothesis_torch_utils.strategies.dtypes import torch_float_dtypes
 
 # Property-based tests which ensure:
 # - The CCM from random_ccm() is 3x3
@@ -95,7 +92,7 @@ def test_random_ccm_rows_sum_to_1(rs: RandomSeeder, meta: DeviceAndDType) -> Non
     assert torch.allclose(actual, expected, rtol=rtol)
 
 
-@given(image=_3HW_TENSORS(), rs=st.random_module())
+@given(image=sized_3hw_tensors(), rs=st.random_module())
 def test_apply_ccm_shape_invariance(image: Tensor, rs: RandomSeeder) -> None:
     """
     Tests that apply_ccm() is invariant with respect to the image shape.
@@ -110,7 +107,7 @@ def test_apply_ccm_shape_invariance(image: Tensor, rs: RandomSeeder) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS(), rs=st.random_module())
+@given(image=sized_3hw_tensors(), rs=st.random_module())
 def test_apply_ccm_dtype_invariance(image: Tensor, rs: RandomSeeder) -> None:
     """
     Tests that apply_ccm() is invariant with respect to the image dtype.
@@ -125,7 +122,7 @@ def test_apply_ccm_dtype_invariance(image: Tensor, rs: RandomSeeder) -> None:
     assert actual == expected
 
 
-@given(image=_3HW_TENSORS(), rs=st.random_module())
+@given(image=sized_3hw_tensors(), rs=st.random_module())
 def test_apply_ccm_device_invariance(image: Tensor, rs: RandomSeeder) -> None:
     """
     Tests that apply_ccm() is invariant with respect to the image device.

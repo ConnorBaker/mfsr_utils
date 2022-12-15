@@ -12,6 +12,11 @@ Install with
 pip install --pre --extra-index-url https://download.pytorch.org/whl/nightly/cu117 .
 ```
 
+Thank you to the authors involved in the following work, from which this code is derived:
+
+- <http://timothybrooks.com/tech/unprocessing>
+- <https://github.com/Algolzw/BSRT>
+
 ## TODO
 
 - Move to DataPipes from the current Dataset implementation

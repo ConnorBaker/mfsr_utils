@@ -8,11 +8,11 @@ from torch import Tensor
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data.dataset import Dataset
 
+from mfsr_utils.datasets.zurich_raw2rgb import ZurichRaw2Rgb
 from mfsr_utils.pipelines.synthetic_burst_generator import (
     SyntheticBurstGeneratorData,
     SyntheticBurstGeneratorTransform,
 )
-from mfsr_utils.datasets.zurich_raw2rgb import ZurichRaw2Rgb
 
 
 @dataclass

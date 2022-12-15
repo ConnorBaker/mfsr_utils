@@ -11,23 +11,27 @@ authors = [
 ]
 maintainers = [{ name = "Connor Baker", email = "connorbaker01@gmail.com" }]
 readme = "README.md"
-urls = { homepage = "https://github.com/connorbaker/bsrt" }
+urls = { homepage = "https://github.com/connorbaker/mfsr_utils" }
 requires-python = ">=3.10"
 dependencies = [
-    "torch==2.0.0.dev20221210+cu117",
-    "torchvision==0.15.0.dev20221210+cu117",
+    "torch==2.0.0.*",
+    "torchvision==0.15.0.*",
     "opencv-python-headless==4.6.0.66",
 ]
 
 [project.optional-dependencies]
-lint = ["black==22.12.0", "flake8==6.0.0", "isort==5.11.1"]
-typecheck = ["pyright==1.1.283", "mypy==0.991"]
+lint = ["black==22.12.0", "flake8==6.0.0", "isort==5.11.2"]
+typecheck = ["pyright==1.1.284", "mypy==0.991"]
 test = [
     "pytest==7.2.0",
     "pytest-xdist==3.1.0",
     "hypothesis==6.61.0",
-    "hypothesis_torch_utils==0.1.0",
+    "hypothesis_torch_utils @ git+https://github.com/ConnorBaker/hypothesis_torch_utils.git@54876144c1b869141e75be35fbc6e302eab4fd6a",
 ]
+
+[tool.setuptools]
+include-package-data = true
+package-data = { mfsr_utils = ["py.typed"] }
 
 [tool.black]
 line-length = 99
@@ -38,34 +42,18 @@ profile = "black"
 line_length = 99
 py_version = "39" # 3.10 isn't supported yet
 
-[tool.setuptools]
-packages = ["mfsr_utils"]
-
 [tool.mypy]
 python_version = "3.10"
 platform = "linux"
-# TODO: Fix these
-disable_error_code = [
-    "arg-type",
-    "assignment",
-    "attr-defined",
-    "empty-body",
-    "import",
-    "index",
-    "misc",
-    "no-redef",
-    "operator",
-    "override",
-]
+strict = true
+warn_unused_ignores = false # Pyright catches different things than mypy
 
 [tool.pyright]
-include = ["mfsr_utils", "tests"]
-# TODO: Enable strict typechecking.
-exclude = ["**/__pycache__"]
-reportMissingImports = true
-reportMissingTypeStubs = false
+include = ["./mfsr_utils", "./tests"]
 pythonVersion = "3.10"
 pythonPlatform = "Linux"
+typeCheckingMode = "strict"
+useLibraryCodeForTypes = true
 
 [tool.pytest.ini_options]
 minversion = "7.0"

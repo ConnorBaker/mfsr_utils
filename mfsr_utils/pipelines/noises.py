@@ -3,10 +3,10 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass
-from typing import ClassVar
 
 import torch
 from torch import Tensor
+from typing_extensions import ClassVar
 
 
 @dataclass
@@ -32,5 +32,5 @@ class Noises:
     def apply(self, image: Tensor) -> Tensor:
         """Adds random shot (proportional to image) and read (independent) noise."""
         variance = image * self.shot_noise + self.read_noise
-        noise = torch.FloatTensor(image.shape).normal_() * variance.sqrt()
+        noise = torch.randn_like(image) * variance.sqrt()
         return image + noise

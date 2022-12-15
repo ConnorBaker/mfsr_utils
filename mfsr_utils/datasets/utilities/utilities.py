@@ -1,32 +1,33 @@
-from typing import TypeVar, Union, overload
-
 import numpy as np
-import numpy.typing as npt
 import torch
+from numpy import floating, ndarray
+from numpy.typing import NBitBase, NDArray
+from torch import Tensor
+from typing_extensions import TypeVar, overload
 
-_T = TypeVar("_T", bound=np.floating)
+_T = TypeVar("_T", bound=NBitBase)
 
 
 @overload
-def pack_raw_image(im_raw: npt.NDArray[_T]) -> npt.NDArray[_T]:
+def pack_raw_image(im_raw: NDArray[floating[_T]]) -> NDArray[floating[_T]]:
     ...
 
 
 @overload
-def pack_raw_image(im_raw: torch.Tensor) -> torch.Tensor:
+def pack_raw_image(im_raw: Tensor) -> Tensor:
     ...
 
 
 def pack_raw_image(
-    im_raw: Union[npt.NDArray[_T], torch.Tensor]
-) -> Union[npt.NDArray[_T], torch.Tensor]:
-    im_out: Union[npt.NDArray[_T], torch.Tensor]
-    if isinstance(im_raw, np.ndarray):
-        im_out = np.zeros_like(im_raw, shape=(4, im_raw.shape[0] // 2, im_raw.shape[1] // 2))
-    elif isinstance(im_raw, torch.Tensor):
-        im_out = torch.zeros((4, im_raw.shape[0] // 2, im_raw.shape[1] // 2), dtype=im_raw.dtype)
-    else:
-        raise Exception
+    im_raw: NDArray[floating[_T]] | Tensor,
+) -> NDArray[floating[_T]] | Tensor:
+    im_out: NDArray[floating[_T]] | Tensor
+    new_shape = (4, im_raw.shape[0] // 2, im_raw.shape[1] // 2)
+    match im_raw:
+        case ndarray():
+            im_out = np.zeros_like(im_raw).reshape(new_shape)
+        case Tensor():
+            im_out = torch.zeros_like(im_raw).reshape(new_shape)
 
     # Manually unroll the assignment loop because it's faster.
     # Notice that we're effectively counting in binary on the right hand side.
@@ -39,30 +40,25 @@ def pack_raw_image(
 
 
 @overload
-def flatten_raw_image(im_raw_4ch: npt.NDArray[_T]) -> npt.NDArray[_T]:
+def flatten_raw_image(im_raw_4ch: NDArray[floating[_T]]) -> NDArray[floating[_T]]:
     ...
 
 
 @overload
-def flatten_raw_image(im_raw_4ch: torch.Tensor) -> torch.Tensor:
+def flatten_raw_image(im_raw_4ch: Tensor) -> Tensor:
     ...
 
 
 def flatten_raw_image(
-    im_raw_4ch: Union[npt.NDArray[_T], torch.Tensor]
-) -> Union[npt.NDArray[_T], torch.Tensor]:
-    im_out: Union[npt.NDArray[_T], torch.Tensor]
-    if isinstance(im_raw_4ch, np.ndarray):
-        im_out = np.zeros_like(
-            im_raw_4ch, shape=(im_raw_4ch.shape[1] * 2, im_raw_4ch.shape[2] * 2)
-        )
-
-    elif isinstance(im_raw_4ch, torch.Tensor):
-        im_out = torch.zeros(
-            (im_raw_4ch.shape[1] * 2, im_raw_4ch.shape[2] * 2), dtype=im_raw_4ch.dtype
-        )
-    else:
-        raise Exception
+    im_raw_4ch: NDArray[floating[_T]] | Tensor,
+) -> NDArray[floating[_T]] | Tensor:
+    im_out: NDArray[floating[_T]] | Tensor
+    new_shape = (3, im_raw_4ch.shape[1] * 2, im_raw_4ch.shape[2] * 2)
+    match im_raw_4ch:
+        case ndarray():
+            im_out = np.zeros_like(im_raw_4ch).reshape(new_shape)
+        case Tensor():
+            im_out = torch.zeros_like(im_raw_4ch).reshape(new_shape)
 
     # Manually unroll the assignment loop because it's faster.
     # Notice that we're effectively counting in binary on the left hand side.

@@ -1,13 +1,13 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, List, TypedDict, Union, _TypedDict
+from typing import Callable
 
 import torch
-import torchvision
-from datasets.utilities.downloadable import Downloadable
+import torchvision  # type: ignore[import]
+from datasets.utilities.downloadable import DownloadableMixin
 from torch import Tensor
-from torchvision.datasets import VisionDataset
-from typing_extensions import ClassVar
+from torchvision.datasets import VisionDataset  # type: ignore[import]
+from typing_extensions import ClassVar, TypedDict
 
 
 # TODO: Should I switch to NamedTuple?
@@ -19,7 +19,7 @@ class NTIRESyntheticBurstValidation2022Data(TypedDict):
 # TODO: Do I need to normalize the images or convert them to floats?
 # TODO: Document the type of the returned tensor.
 @dataclass
-class NTIRESyntheticBurstValidation2022(VisionDataset, Downloadable):
+class NTIRESyntheticBurstValidation2022(VisionDataset, DownloadableMixin):
     """Synthetic burst validation set introduced in [1]. The validation burst have been generated
     using a synthetic data generation pipeline. The dataset can be downloaded from
     https://data.vision.ee.ethz.ch/bhatg/SyntheticBurstVal.zip
@@ -31,15 +31,15 @@ class NTIRESyntheticBurstValidation2022(VisionDataset, Downloadable):
     url: ClassVar[str] = "https://data.vision.ee.ethz.ch/bhatg/SyntheticBurstVal.zip"
     filename: ClassVar[str] = "ntire_synburst_validation_2022.zip"
     dirname: ClassVar[str] = "ntire_synburst_validation_2022"
-    mirrors: ClassVar[List[str]] = [
+    mirrors: ClassVar[list[str]] = [
         "https://storage.googleapis.com/bsrt-supplemental/SyntheticBurstVal.zip"
     ]
 
     data_dir: str
     burst_size: int = 14
-    transform: Callable[
-        [NTIRESyntheticBurstValidation2022Data], Union[Tensor, _TypedDict]
-    ] = field(default=lambda x: x)
+    transform: None | Callable[
+        [NTIRESyntheticBurstValidation2022Data], Tensor | dict[str, Tensor]
+    ] = None
 
     def __post_init__(self) -> None:
         assert (
@@ -57,7 +57,7 @@ class NTIRESyntheticBurstValidation2022(VisionDataset, Downloadable):
                 The 4 channels correspond to 'R', 'G', 'G', and 'B' values in the RGGB bayer
                 mosaick.
         """
-        image_pngs: List[Tensor] = []
+        image_pngs: list[Tensor] = []
         for i in range(self.burst_size):
             image_path = (
                 Path(self.data_dir)
@@ -66,11 +66,11 @@ class NTIRESyntheticBurstValidation2022(VisionDataset, Downloadable):
                 / f"{index:04}"
                 / f"im_raw_{i:02}.png"
             )
-            image_file = torchvision.io.read_file(image_path.as_posix())
+            image_file: Tensor = torchvision.io.read_file(image_path.as_posix())
 
             # TODO: Do we need to explicitly state the image read mode? These are bayered images
             # and we don't want them to be interpreted as RGB PNG files with an alpha layer.
-            image_png = torchvision.io.decode_png(image_file)
+            image_png: Tensor = torchvision.io.decode_png(image_file)
             image_pngs.append(image_png)
 
         stacked = torch.stack(image_pngs)
@@ -87,8 +87,8 @@ class NTIRESyntheticBurstValidation2022(VisionDataset, Downloadable):
             gt (Tensor): A tensor of shape [3, 384, 384].
         """
         image_path = Path(self.data_dir) / self.dirname / "gt" / f"{index:04}" / "im_rgb.png"
-        image_file = torchvision.io.read_file(image_path.as_posix())
-        image_png = torchvision.io.decode_png(image_file)
+        image_file: Tensor = torchvision.io.read_file(image_path.as_posix())
+        image_png: Tensor = torchvision.io.decode_png(image_file)
         # gt_t = torch.from_numpy(gt.astype(np.float32)).permute(2, 0, 1).float() / 2**14
         return image_png
 
