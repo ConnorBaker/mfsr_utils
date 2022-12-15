@@ -1,0 +1,30 @@
+name: Lint
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  workflow_call:
+
+jobs:
+  isort:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: python3 -m pip install isort
+      - run: isort --check-only --diff .
+
+  black:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: python3 -m pip install black
+      - run: black --check --diff .
+
+  flake8:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: python3 -m pip install flake8
+      - run: flake8 .
