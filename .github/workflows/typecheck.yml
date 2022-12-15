@@ -19,7 +19,9 @@ jobs:
           cache-dependency-path: "**/pyproject.toml"
       - run: python3 -m pip install pip --upgrade
       - run: python3 -m pip install --pre --extra-index-url https://download.pytorch.org/whl/nightly/cpu '.[typecheck,test]'
+      - run: echo "::add-matcher::./.github/problem_matchers/mypy.jsonc"
       - run: mypy ./mfsr_utils ./tests
+      - run: echo "::remove-matcher owner=mypy::"
 
   pyright:
     runs-on: ubuntu-22.04
@@ -32,5 +34,9 @@ jobs:
           cache-dependency-path: "**/pyproject.toml"
       - run: python3 -m pip install pip --upgrade
       - run: python3 -m pip install --pre --extra-index-url https://download.pytorch.org/whl/nightly/cpu '.[typecheck,test]'
+      # - run: echo "::add-matcher::./.github/problem_matchers/pyright.json"
       - run: pyright ./mfsr_utils ./tests
+      # - run: echo "::remove-matcher owner=pyright::"
+      # - run: echo "::add-matcher::./.github/problem_matchers/pyright_verifytypes.json"
       - run: pyright --verifytypes mfsr_utils --ignoreexternal --pythonversion 3.10 --pythonplatform Linux --verbose
+      # - run: echo "::remove-matcher owner=pyright_verifytypes::"

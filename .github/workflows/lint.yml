@@ -13,18 +13,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: python3 -m pip install isort
+      - run: echo "::add-matcher::./.github/problem_matchers/isort.jsonc"
       - run: isort --check-only --diff .
+      - run: echo "::remove-matcher owner=isort::"
 
   black:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - run: python3 -m pip install black
+      - run: echo "::add-matcher::./.github/problem_matchers/black.jsonc"
       - run: black --check --diff .
+      - run: echo "::remove-matcher owner=black::"
 
   flake8:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - run: python3 -m pip install flake8
+      - run: echo "::add-matcher::./.github/problem_matchers/flake8.jsonc"
       - run: flake8 .
+      - run: echo "::remove-matcher owner=flake8::"

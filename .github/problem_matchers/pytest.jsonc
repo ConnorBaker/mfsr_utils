@@ -1,0 +1,18 @@
+// Copyright © 2020 Tomáš Janoušek
+// Taken from https://raw.githubusercontent.com/liskin/gh-problem-matcher-wrap/9e12346d49ea3c5bf73c9eb54cddd37f45105ead/problem-matchers/pytest.json
+{
+  "problemMatcher": [
+    {
+      "owner": "pytest",
+      "severity": "error",
+      "pattern": [
+        {
+          "regexp": "^(\\S+):(\\d+): (.*)$",
+          "file": 1,
+          "line": 2,
+          "message": 3
+        }
+      ]
+    }
+  ]
+}
