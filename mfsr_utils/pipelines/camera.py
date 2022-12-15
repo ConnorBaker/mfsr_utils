@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import cv2 as cv
+import cv2 as cv  # type: ignore[import]
 import numpy as np
 import numpy.typing as npt
 import torch

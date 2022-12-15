@@ -4,7 +4,7 @@ from typing import Callable
 
 import torch
 import torchvision  # type: ignore[import]
-from datasets.utilities.downloadable import DownloadableMixin
+from datasets.protocols.downloadable import Downloadable
 from torch import Tensor
 from torchvision.datasets import VisionDataset  # type: ignore[import]
 from typing_extensions import ClassVar, TypedDict
@@ -19,7 +19,7 @@ class NTIRESyntheticBurstValidation2022Data(TypedDict):
 # TODO: Do I need to normalize the images or convert them to floats?
 # TODO: Document the type of the returned tensor.
 @dataclass
-class NTIRESyntheticBurstValidation2022(VisionDataset, DownloadableMixin):
+class NTIRESyntheticBurstValidation2022(VisionDataset, Downloadable):
     """Synthetic burst validation set introduced in [1]. The validation burst have been generated
     using a synthetic data generation pipeline. The dataset can be downloaded from
     https://data.vision.ee.ethz.ch/bhatg/SyntheticBurstVal.zip

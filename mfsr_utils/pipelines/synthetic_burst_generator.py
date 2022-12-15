@@ -1,7 +1,7 @@
 import random
 from dataclasses import dataclass, field
 
-import cv2
+import cv2  # type: ignore[import]
 import numpy as np
 import numpy.typing as npt
 import torch

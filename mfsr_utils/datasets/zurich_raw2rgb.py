@@ -7,11 +7,11 @@ from torch import Tensor
 from torchvision.datasets import VisionDataset  # type: ignore[import]
 from typing_extensions import ClassVar
 
-from mfsr_utils.datasets.utilities.downloadable import DownloadableMixin
+from mfsr_utils.datasets.protocols.downloadable import Downloadable
 
 
 @dataclass
-class ZurichRaw2Rgb(VisionDataset, DownloadableMixin):
+class ZurichRaw2Rgb(VisionDataset, Downloadable):
     """Canon RGB images from the "Zurich RAW to RGB mapping" dataset. You can download the full
     dataset (22 GB) from http://people.ee.ethz.ch/~ihnatova/pynet.html#dataset. Alternatively, you
     can only download the Canon RGB images (5.5 GB) from

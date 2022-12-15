@@ -8,13 +8,13 @@ from torch import Tensor
 from torchvision.datasets import VisionDataset  # type: ignore[import]
 from typing_extensions import ClassVar
 
-from mfsr_utils.datasets.utilities.downloadable import DownloadableMixin
+from mfsr_utils.datasets.protocols.downloadable import Downloadable
 
 
 # TODO: Do I need to normalize the images or convert them to floats?
 # TODO: Document the type of the returned tensor.
 @dataclass
-class NTIRESyntheticBurstTest2022(VisionDataset, DownloadableMixin):
+class NTIRESyntheticBurstTest2022(VisionDataset, Downloadable):
     """Synthetic burst test set. The test burst have been generated using the same synthetic
     pipeline as employed in SyntheticBurst dataset.
     https://data.vision.ee.ethz.ch/bhatg/synburst_test_2022.zip
