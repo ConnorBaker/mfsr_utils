@@ -11,8 +11,7 @@
           "column": 3,
           "severity": 4,
           "message": 5,
-          "code": 6,
-          "loop": true
+          "code": 6
         }
       ]
     }
