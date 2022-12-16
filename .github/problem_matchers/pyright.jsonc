@@ -1,0 +1,27 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "pyright",
+      "pattern": [
+        {
+          // Matches the 1st line in the output
+          "regexp": "^([/\\w.]+)$",
+          "file": 1
+        },
+        {
+          // Matches the later lines in the output
+          // GitHub understands case-insentive severity levels
+          "regexp": "^  (.+):(.+):(.+) - (error|warning|info): (.+) \\((.+)\\)$",
+          // File is carried through from above, so we define the rest of the groups
+          // The first group is the file path, but we don't need it again
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5,
+          "code": 6,
+          "loop": true
+        }
+      ]
+    }
+  ]
+}

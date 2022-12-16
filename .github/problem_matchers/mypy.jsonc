@@ -1,17 +1,16 @@
-// https://gredowski.com/blogging/2021/02/21/linting-whole-project-in-vscode.html
 {
   "problemMatcher": [
     {
       "owner": "mypy",
       "pattern": [
         {
-          "regexp": "^([\\w.]+):(\\d+):(\\d+): (\\w+): (.+)  \\[([\\w-]+)\\]$",
+          // GitHub understands case-insentive severity levels
+          "regexp": "^(.+):(.+): (error|warning|info): (.+)  \\[(.+)\\]$",
           "file": 1,
           "line": 2,
-          "column": 3,
-          "code": 6,
-          "severity": 4,
-          "message": 5
+          "severity": 3,
+          "message": 4,
+          "code": 5
         }
       ]
     }
