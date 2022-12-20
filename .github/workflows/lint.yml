@@ -16,6 +16,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: "**/pyproject.toml"
       - run: python3 -m pip install isort
       - run: echo "::add-matcher::./.github/problem_matchers/isort.jsonc"
       - run: isort --check-only --diff .
@@ -25,6 +30,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: "**/pyproject.toml"
       - run: python3 -m pip install black
       - run: echo "::add-matcher::./.github/problem_matchers/black.jsonc"
       - run: black --check --diff .
@@ -34,6 +44,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: "**/pyproject.toml"
       - run: python3 -m pip install flake8
       - run: echo "::add-matcher::./.github/problem_matchers/flake8.jsonc"
       - run: flake8 .
