@@ -26,7 +26,7 @@ test = [
     "pytest==7.2.0",
     "pytest-xdist==3.1.0",
     "hypothesis==6.61.0",
-    "hypothesis_torch_utils @ git+https://github.com/ConnorBaker/hypothesis_torch_utils.git@84c2a453ed512ca45af8bee9b46437c4113d4e3c",
+    "hypothesis_torch_utils @ git+https://github.com/ConnorBaker/hypothesis_torch_utils.git@44de841ab38cbbb75de0b11a292bdb22f2ef9498",
 ]
 
 [tool.setuptools]

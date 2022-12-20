@@ -9,7 +9,7 @@ Also contains a number of datasets for training and evaluating MFSR models.
 Install with
 
 ```bash
-pip install --pre --extra-index-url https://download.pytorch.org/whl/nightly/cu117 .
+pip install --pre --extra-index-url https://download.pytorch.org/whl/nightly/cu117 .[lint,typecheck,test]
 ```
 
 Thank you to the authors involved in the following work, from which this code is derived:
