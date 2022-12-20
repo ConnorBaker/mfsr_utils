@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 import torch
 import torchvision  # type: ignore[import]
-from datasets.protocols.downloadable import Downloadable
 from torch import Tensor
-from torchvision.datasets import VisionDataset  # type: ignore[import]
+from torch.utils.data.dataset import Dataset
 from typing_extensions import ClassVar, TypedDict
+
+from mfsr_utils.datasets.protocols.downloadable import Downloadable
 
 
 # TODO: Should I switch to NamedTuple?
@@ -19,7 +19,9 @@ class NTIRESyntheticBurstValidation2022Data(TypedDict):
 # TODO: Do I need to normalize the images or convert them to floats?
 # TODO: Document the type of the returned tensor.
 @dataclass
-class NTIRESyntheticBurstValidation2022(VisionDataset, Downloadable):
+class NTIRESyntheticBurstValidation2022(
+    Dataset[NTIRESyntheticBurstValidation2022Data], Downloadable
+):
     """Synthetic burst validation set introduced in [1]. The validation burst have been generated
     using a synthetic data generation pipeline. The dataset can be downloaded from
     https://data.vision.ee.ethz.ch/bhatg/SyntheticBurstVal.zip
@@ -35,11 +37,8 @@ class NTIRESyntheticBurstValidation2022(VisionDataset, Downloadable):
         "https://storage.googleapis.com/bsrt-supplemental/SyntheticBurstVal.zip"
     ]
 
-    data_dir: str
+    data_dir: Path
     burst_size: int = 14
-    transform: None | Callable[
-        [NTIRESyntheticBurstValidation2022Data], Tensor | dict[str, Tensor]
-    ] = None
 
     def __post_init__(self) -> None:
         assert (

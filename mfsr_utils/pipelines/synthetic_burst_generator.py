@@ -115,7 +115,7 @@ def rgb2rawburst(
 
 
 def single2lrburst(
-    image: npt.NDArray[np.uint8] | Tensor,
+    image: Tensor,
     burst_size: int,
     downsample_factor: float = 1.0,
     transformation_params: None | ImageTransformationParams = None,
@@ -124,6 +124,23 @@ def single2lrburst(
     """Generates a burst of size burst_size from the input image by applying random
     transformations defined by transformation_params, and downsampling the resulting burst by
     downsample_factor.
+
+    Note: All transformations occur on the CPU (thanks OpenCV) with float64.
+
+    Args:
+        image (Tensor): Input image. Must be of shape (C, H, W) and floating dtype.
+        burst_size (int): Size of the burst to generate.
+        downsample_factor (float, optional): Downsampling factor. Defaults to 1.0.
+        transformation_params (ImageTransformationParams, optional): Parameters for the random
+            transformations. Defaults to None.
+        interpolation_type (InterpolationType, optional): Interpolation type. Defaults to
+            "bilinear".
+        dtype (torch.dtype, optional): Data type of the output. Defaults to torch.float64.
+        device (torch.device, optional): Device to allocate the output on. Defaults to
+            torch.device("cpu").
+
+    Returns:
+        tuple[Tensor, Tensor]: The generated burst and the flow vectors.
     """
     if transformation_params is None:
         transformation_params = ImageTransformationParams()
@@ -131,31 +148,32 @@ def single2lrburst(
     interpolation: int
     match interpolation_type:
         case "nearest":
-            interpolation = cv2.INTER_NEAREST  # type: ignore
+            interpolation = cv2.INTER_NEAREST  # type: ignore[attr-defined]
         case "bilinear":
-            interpolation = cv2.INTER_LINEAR  # type: ignore
+            interpolation = cv2.INTER_LINEAR  # type: ignore[attr-defined]
         case "bicubic":
-            interpolation = cv2.INTER_CUBIC  # type: ignore
+            interpolation = cv2.INTER_CUBIC  # type: ignore[attr-defined]
         case "lanczos":
-            interpolation = cv2.INTER_LANCZOS4  # type: ignore
+            interpolation = cv2.INTER_LANCZOS4  # type: ignore[attr-defined]
 
-    normalize = False
-    if isinstance(image, torch.Tensor):
-        if image.max() < 2.0:  # type: ignore
-            image = image * 255.0
-            normalize = True
-        image = image.permute(1, 2, 0).cpu().numpy().astype(np.uint8)
-    assert isinstance(image, np.ndarray)
+    image_np: npt.NDArray[np.uint8] = (
+        (image * 255.0).permute(1, 2, 0).to(device="cpu", dtype=torch.uint8).numpy()
+    )
 
     burst: list[Tensor] = []
     sample_pos_inv_all: list[Tensor] = []
 
     rvs, cvs = torch.meshgrid(
-        [torch.arange(0, image.shape[0]), torch.arange(0, image.shape[1])],
+        [
+            torch.arange(0, image_np.shape[0], dtype=torch.uint8, device="cpu"),
+            torch.arange(0, image_np.shape[1], dtype=torch.uint8, device="cpu"),
+        ],
         indexing="ij",
     )
 
-    sample_grid = torch.stack((cvs, rvs, torch.ones_like(cvs)), dim=-1).float()
+    sample_grid = torch.stack((cvs, rvs, torch.ones_like(cvs)), dim=-1).to(
+        dtype=torch.float64, device="cpu"
+    )
 
     for i in range(burst_size):
         if i == 0:
@@ -193,50 +211,56 @@ def single2lrburst(
             max_scale = transformation_params.max_scale
             scale_factor: float = np.exp(random.uniform(-max_scale, max_scale))
 
-            scale_factor_tuple: tuple[float, float] = (
+            scale_factor_tuple = (
                 scale_factor,
                 scale_factor * ar_factor,
             )
 
-        output_sz: tuple[int, int] = (image.shape[1], image.shape[0])
+        output_size: tuple[int, int] = (image_np.shape[1], image_np.shape[0])
 
         # Generate a affine transformation matrix corresponding to the sampled parameters
         t_mat_tensor: Tensor = get_tmat(
-            (image.shape[0], image.shape[1]),
+            (image_np.shape[0], image_np.shape[1]),
             translation,
             theta,
             shear_factor,
             scale_factor_tuple,
+            dtype=torch.float64,
+            device=torch.device("cpu"),
         )
-        t_mat: npt.NDArray[np.float64] = t_mat_tensor.cpu().numpy()
+        t_mat_np: npt.NDArray[np.float64] = t_mat_tensor.numpy()
 
         # Apply the sampled affine transformation
-        image_t: npt.NDArray[np.float64] = cv2.warpAffine(  # type: ignore
-            image,
-            t_mat,
-            output_sz,
+        image_np_t: npt.NDArray[np.uint8] = cv2.warpAffine(  # type: ignore
+            image_np,
+            t_mat_np,
+            output_size,
             flags=interpolation,
             borderMode=cv2.BORDER_CONSTANT,  # type: ignore
         )
 
         t_mat_tensor_3x3: Tensor = torch.cat(
-            (t_mat_tensor.float(), torch.tensor([0.0, 0.0, 1.0]).view(1, 3)), dim=0
+            (
+                t_mat_tensor,
+                torch.tensor([0.0, 0.0, 1.0], dtype=torch.float64, device="cpu").view(1, 3),
+            ),
+            dim=0,
         )
         t_mat_tensor_inverse: Tensor = t_mat_tensor_3x3.inverse()[:2, :].contiguous()
 
-        sample_pos_inv: Tensor = torch.mm(
-            sample_grid.view(-1, 3), t_mat_tensor_inverse.t().float()
-        ).view(*sample_grid.shape[:2], -1)
+        sample_pos_inv: Tensor = torch.mm(sample_grid.view(-1, 3), t_mat_tensor_inverse.t()).view(
+            *sample_grid.shape[:2], -1
+        )
 
         if transformation_params.border_crop > 0:
             border_crop = transformation_params.border_crop
 
-            image_t = image_t[border_crop:-border_crop, border_crop:-border_crop, :]
+            image_np_t = image_np_t[border_crop:-border_crop, border_crop:-border_crop, :]
             sample_pos_inv = sample_pos_inv[border_crop:-border_crop, border_crop:-border_crop, :]
 
         # Downsample the image
-        image_t = cv2.resize(  # type: ignore
-            image_t,
+        image_np_t = cv2.resize(  # type: ignore
+            image_np_t,
             None,  # type: ignore
             fx=1.0 / downsample_factor,  # type: ignore
             fy=1.0 / downsample_factor,  # type: ignore
@@ -253,10 +277,12 @@ def single2lrburst(
         sample_pos_inv = (
             torch.from_numpy(sample_pos_inv).permute(2, 0, 1).contiguous()  # type: ignore
         )
-        image_t_tensor = torch.from_numpy(image_t).permute(2, 0, 1)  # type: ignore
-
-        if normalize:
-            image_t_tensor /= 255.0
+        image_t_tensor = (
+            torch.from_numpy(image_np_t)  # type: ignore[assignment]
+            .permute(2, 0, 1)
+            .to(torch.float64)
+            / 255.0
+        )
 
         burst.append(image_t_tensor)
         sample_pos_inv_all.append(sample_pos_inv / downsample_factor)
@@ -267,6 +293,7 @@ def single2lrburst(
     # Compute the flow vectors to go from the i'th burst image to the base image
     flow_vectors = sample_pos_inv_all_tensor - sample_pos_inv_all_tensor[:, :1, ...]
 
+    # Move everything to the appropriate device and dtype
     return burst_images, flow_vectors
 
 
@@ -351,7 +378,7 @@ class SyntheticBurstGeneratorTransform(torch.nn.Module):
     )
     interpolation_type: InterpolationType = "bilinear"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         super().__init__()
         self.final_crop_sz = self.crop_sz + 2 * self.burst_transformation_params.border_crop
         self.cropper = RandomCrop(self.final_crop_sz)

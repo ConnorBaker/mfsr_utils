@@ -31,6 +31,7 @@ test = [
 
 [tool.setuptools]
 include-package-data = true
+package-dir = { mfsr_utils = "mfsr_utils" }
 package-data = { mfsr_utils = ["py.typed"] }
 
 [tool.black]

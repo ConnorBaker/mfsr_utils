@@ -4,6 +4,7 @@ import cv2 as cv  # type: ignore[import]
 import numpy as np
 import numpy.typing as npt
 import torch
+import torch.jit
 from torch import Tensor
 
 """ Based on http://timothybrooks.com/tech/unprocessing
@@ -85,7 +86,9 @@ def apply_smoothstep(image: Tensor) -> Tensor:
     Returns:
         Image with tone mapping applied.
     """
-    return (image**2 * (3 - 2 * image)).clamp(0.0, 1.0)
+    smoothstepped: Tensor = image**2 * (3 - 2 * image)
+    clamped: Tensor = smoothstepped.clamp(0.0, 1.0)
+    return clamped
 
 
 def invert_smoothstep(image: Tensor) -> Tensor:
@@ -97,7 +100,11 @@ def invert_smoothstep(image: Tensor) -> Tensor:
     Returns:
         Inverted image.
     """
-    return (0.5 - torch.sin(torch.asin(1.0 - 2.0 * image.clamp(0.0, 1.0)) / 3.0)).clamp(0.0, 1.0)
+    arc_sin: Tensor = torch.asin(1.0 - 2.0 * image.clamp(0.0, 1.0))
+    sin: Tensor = torch.sin(arc_sin / 3.0)
+    shifted: Tensor = 0.5 - sin
+    clamped: Tensor = shifted.clamp(0.0, 1.0)
+    return clamped
 
 
 def gamma_expansion(image: Tensor) -> Tensor:
@@ -110,7 +117,10 @@ def gamma_expansion(image: Tensor) -> Tensor:
         Image in linear space.
     """
     # Clamps to prevent numerical instability of gradients near zero.
-    return (image.clamp(1e-8) ** 2.2).clamp(0.0, 1.0)
+    pre_clamped: Tensor = image.clamp(1e-8)
+    expaneded: Tensor = pre_clamped**2.2
+    clamped: Tensor = expaneded.clamp(0.0, 1.0)
+    return clamped
 
 
 def gamma_compression(image: Tensor) -> Tensor:
@@ -123,7 +133,10 @@ def gamma_compression(image: Tensor) -> Tensor:
         Image in gamma space.
     """
     # Clamps to prevent numerical instability of gradients near zero.
-    return (image.clamp(1e-8) ** (1.0 / 2.2)).clamp(0.0, 1.0)
+    pre_clamped: Tensor = image.clamp(1e-8)
+    compressed: Tensor = pre_clamped ** (1.0 / 2.2)
+    clamped: Tensor = compressed.clamp(0.0, 1.0)
+    return clamped
 
 
 def apply_ccm(image: Tensor, ccm: Tensor) -> Tensor:
@@ -184,7 +197,7 @@ def demosaic(image: Tensor) -> Tensor:
 
     # We cannot convert a tensor on the GPU to a numpy array, so we need to move it to the CPU
     # first.
-    im_sc_np: npt.NDArray[np.uint8] = im_sc.cpu().numpy()
+    im_sc_np: npt.NDArray[np.uint8] = im_sc.to(device="cpu", dtype=torch.uint8).numpy()
 
     out: list[Tensor] = [
         (

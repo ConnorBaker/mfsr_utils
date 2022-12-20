@@ -1,7 +1,9 @@
+import torch
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
+from typing_extensions import get_args
 
 from mfsr_utils.pipelines.image_transformation_params import ImageTransformationParams
 from mfsr_utils.pipelines.synthetic_burst_generator import single2lrburst
@@ -10,13 +12,10 @@ from mfsr_utils.pipelines.types import InterpolationType
 
 @given(
     image=sized_3hw_tensors(),
-    burst_size=st.just(2),
-    # burst_size=st.integers(min_value=1, max_value=20),
-    downsample_factor=st.just(1.0),
-    # downsample_factor=st.floats(0.25, 1.0),
+    burst_size=st.integers(min_value=1, max_value=20),
+    downsample_factor=st.floats(0.25, 1.0),
     transformation_params=st.none(),  # TODO: Add transformation params
-    # interpolation_type=st.sampled_from(get_args(InterpolationType)),
-    interpolation_type=st.just("bilinear"),
+    interpolation_type=st.sampled_from(get_args(InterpolationType)),
 )
 def test_single2lrburst_burst_size_matches(
     image: Tensor,
@@ -38,13 +37,10 @@ def test_single2lrburst_burst_size_matches(
 
 @given(
     image=sized_3hw_tensors(),
-    burst_size=st.just(2),
-    # burst_size=st.integers(min_value=1, max_value=20),
-    downsample_factor=st.just(1.0),
-    # downsample_factor=st.floats(0.25, 1.0),
+    burst_size=st.integers(min_value=1, max_value=20),
+    downsample_factor=st.floats(0.25, 1.0),
     transformation_params=st.none(),  # TODO: Add transformation params
-    # interpolation_type=st.sampled_from(get_args(InterpolationType)),
-    interpolation_type=st.just("bilinear"),
+    interpolation_type=st.sampled_from(get_args(InterpolationType)),
 )
 def test_single2lrburst_flow_shape_invariant(
     image: Tensor,
@@ -73,13 +69,10 @@ def test_single2lrburst_flow_shape_invariant(
 
 @given(
     image=sized_3hw_tensors(),
-    burst_size=st.just(2),
-    # burst_size=st.integers(min_value=1, max_value=20),
-    downsample_factor=st.just(1.0),
-    # downsample_factor=st.floats(0.25, 1.0),
+    burst_size=st.integers(min_value=1, max_value=20),
+    downsample_factor=st.floats(0.25, 1.0),
     transformation_params=st.none(),  # TODO: Add transformation params
-    # interpolation_type=st.sampled_from(get_args(InterpolationType)),
-    interpolation_type=st.just("bilinear"),
+    interpolation_type=st.sampled_from(get_args(InterpolationType)),
 )
 def test_single2lrburst_device_invariant(
     image: Tensor,
@@ -96,7 +89,7 @@ def test_single2lrburst_device_invariant(
         interpolation_type,
     )
 
-    expected_device = image.device
+    expected_device = torch.device("cpu")
     actual_burst_device = burst_images.device
     actual_flow_device = flow_vectors.device
     assert actual_burst_device == expected_device
@@ -105,13 +98,10 @@ def test_single2lrburst_device_invariant(
 
 @given(
     image=sized_3hw_tensors(),
-    burst_size=st.just(2),
-    # burst_size=st.integers(min_value=1, max_value=20),
-    downsample_factor=st.just(1.0),
-    # downsample_factor=st.floats(0.25, 1.0),
+    burst_size=st.integers(min_value=1, max_value=20),
+    downsample_factor=st.floats(0.25, 1.0),
     transformation_params=st.none(),  # TODO: Add transformation params
-    # interpolation_type=st.sampled_from(get_args(InterpolationType)),
-    interpolation_type=st.just("bilinear"),
+    interpolation_type=st.sampled_from(get_args(InterpolationType)),
 )
 def test_single2lrburst_dtype_invariant(
     image: Tensor,
@@ -128,7 +118,7 @@ def test_single2lrburst_dtype_invariant(
         interpolation_type,
     )
 
-    expected_dtype = image.dtype
+    expected_dtype = torch.float64
     actual_burst_dtype = burst_images.dtype
     actual_flow_dtype = flow_vectors.dtype
     assert actual_burst_dtype == expected_dtype

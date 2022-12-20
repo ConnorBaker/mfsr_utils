@@ -9,7 +9,9 @@ _T = TypeVar("_T", bound=NBitBase)
 
 
 @overload
-def pack_raw_image(im_raw: NDArray[floating[_T]]) -> NDArray[floating[_T]]:
+def pack_raw_image(
+    im_raw: NDArray[floating[_T]],  # type: ignore[valid-type]
+) -> NDArray[floating[_T]]:  # type: ignore[valid-type]
     ...
 
 
@@ -19,10 +21,10 @@ def pack_raw_image(im_raw: Tensor) -> Tensor:
 
 
 def pack_raw_image(
-    im_raw: NDArray[floating[_T]] | Tensor,
-) -> NDArray[floating[_T]] | Tensor:
-    im_out: NDArray[floating[_T]] | Tensor
-    new_shape = (4, im_raw.shape[0] // 2, im_raw.shape[1] // 2)
+    im_raw: NDArray[floating[_T]] | Tensor,  # type: ignore[valid-type]
+) -> NDArray[floating[_T]] | Tensor:  # type: ignore[valid-type]
+    im_out: NDArray[floating[_T]] | Tensor  # type: ignore[valid-type]
+    new_shape: tuple[int, int, int] = (4, im_raw.shape[0] // 2, im_raw.shape[1] // 2)
     match im_raw:
         case ndarray():
             im_out = np.zeros_like(im_raw).reshape(new_shape)
@@ -40,7 +42,9 @@ def pack_raw_image(
 
 
 @overload
-def flatten_raw_image(im_raw_4ch: NDArray[floating[_T]]) -> NDArray[floating[_T]]:
+def flatten_raw_image(
+    im_raw_4ch: NDArray[floating[_T]],  # type: ignore[valid-type]
+) -> NDArray[floating[_T]]:  # type: ignore[valid-type]
     ...
 
 
@@ -50,9 +54,9 @@ def flatten_raw_image(im_raw_4ch: Tensor) -> Tensor:
 
 
 def flatten_raw_image(
-    im_raw_4ch: NDArray[floating[_T]] | Tensor,
-) -> NDArray[floating[_T]] | Tensor:
-    im_out: NDArray[floating[_T]] | Tensor
+    im_raw_4ch: NDArray[floating[_T]] | Tensor,  # type: ignore[valid-type]
+) -> NDArray[floating[_T]] | Tensor:  # type: ignore[valid-type]
+    im_out: NDArray[floating[_T]] | Tensor  # type: ignore[valid-type]
     new_shape = (3, im_raw_4ch.shape[1] * 2, im_raw_4ch.shape[2] * 2)
     match im_raw_4ch:
         case ndarray():
