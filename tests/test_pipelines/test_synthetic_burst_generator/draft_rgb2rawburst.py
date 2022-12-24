@@ -7,7 +7,7 @@ from torch import Tensor
 from typing_extensions import get_args
 
 from mfsr_utils.pipelines.image_processing_params import ImageProcessingParams
-from mfsr_utils.pipelines.image_transformation_params import ImageTransformationParams
+from mfsr_utils.pipelines.image_transform_params import ImageTransformParams
 from mfsr_utils.pipelines.types import InterpolationType
 
 
@@ -16,7 +16,7 @@ from mfsr_utils.pipelines.types import InterpolationType
     image=sized_3hw_tensors(dtype=torch.float32),
     burst_size=st.integers(min_value=1, max_value=20),
     downsample_factor=st.floats(0.25, 1.0),
-    burst_transformation_params=st.none(),  # TODO: Add transformation params
+    burst_transform_params=st.none(),  # TODO: Add transformation params
     image_processing_params=st.none(),  # TODO: Add image processing params
     interpolation_type=st.sampled_from(get_args(InterpolationType)),
 )
@@ -25,7 +25,7 @@ def test_rgb2rawburst(
     image: Tensor,
     burst_size: int,
     downsample_factor: float,
-    burst_transformation_params: None | ImageTransformationParams,
+    burst_transform_params: None | ImageTransformParams,
     image_processing_params: None | ImageProcessingParams,
     interpolation_type: InterpolationType,
 ) -> None:
@@ -44,7 +44,7 @@ def test_rgb2rawburst(
         image: Image to convert to raw burst
         burst_size: Number of images in the burst
         downsample_factor: Factor to downsample the image by
-        burst_transformation_params: Transformation parameters to apply to the burst
+        burst_transform_params: Transformation parameters to apply to the burst
         image_processing_params: Image processing parameters to apply to the burst
         interpolation_type: Interpolation type to use when resizing the image
 

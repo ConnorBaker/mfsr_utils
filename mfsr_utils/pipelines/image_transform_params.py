@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class ImageTransformationParams:
+class ImageTransformParams:
     """Dataclass for storing transformation parameters"""
 
     border_crop: int = 0

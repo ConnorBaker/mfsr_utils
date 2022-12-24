@@ -5,7 +5,7 @@ from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensor
 from torch import Tensor
 from typing_extensions import get_args
 
-from mfsr_utils.pipelines.image_transformation_params import ImageTransformationParams
+from mfsr_utils.pipelines.image_transform_params import ImageTransformParams
 from mfsr_utils.pipelines.synthetic_burst_generator import single2lrburst
 from mfsr_utils.pipelines.types import InterpolationType
 
@@ -14,21 +14,21 @@ from mfsr_utils.pipelines.types import InterpolationType
     image=sized_3hw_tensors(),
     burst_size=st.integers(min_value=1, max_value=20),
     downsample_factor=st.floats(0.25, 1.0),
-    transformation_params=st.none(),  # TODO: Add transformation params
+    transform_params=st.none(),  # TODO: Add transformation params
     interpolation_type=st.sampled_from(get_args(InterpolationType)),
 )
 def test_single2lrburst_burst_size_matches(
     image: Tensor,
     burst_size: int,
     downsample_factor: float,
-    transformation_params: None | ImageTransformationParams,
+    transform_params: None | ImageTransformParams,
     interpolation_type: InterpolationType,
 ) -> None:
     burst_images, _ = single2lrburst(
         image,
         burst_size,
         downsample_factor,
-        transformation_params,
+        transform_params,
         interpolation_type,
     )
     actual_burst_size = burst_images.shape[0]
@@ -39,21 +39,21 @@ def test_single2lrburst_burst_size_matches(
     image=sized_3hw_tensors(),
     burst_size=st.integers(min_value=1, max_value=20),
     downsample_factor=st.floats(0.25, 1.0),
-    transformation_params=st.none(),  # TODO: Add transformation params
+    transform_params=st.none(),  # TODO: Add transformation params
     interpolation_type=st.sampled_from(get_args(InterpolationType)),
 )
 def test_single2lrburst_flow_shape_invariant(
     image: Tensor,
     burst_size: int,
     downsample_factor: float,
-    transformation_params: None | ImageTransformationParams,
+    transform_params: None | ImageTransformParams,
     interpolation_type: InterpolationType,
 ) -> None:
     burst_images, flow_vectors = single2lrburst(
         image,
         burst_size,
         downsample_factor,
-        transformation_params,
+        transform_params,
         interpolation_type,
     )
 
@@ -71,21 +71,21 @@ def test_single2lrburst_flow_shape_invariant(
     image=sized_3hw_tensors(),
     burst_size=st.integers(min_value=1, max_value=20),
     downsample_factor=st.floats(0.25, 1.0),
-    transformation_params=st.none(),  # TODO: Add transformation params
+    transform_params=st.none(),  # TODO: Add transformation params
     interpolation_type=st.sampled_from(get_args(InterpolationType)),
 )
 def test_single2lrburst_device_invariant(
     image: Tensor,
     burst_size: int,
     downsample_factor: float,
-    transformation_params: None | ImageTransformationParams,
+    transform_params: None | ImageTransformParams,
     interpolation_type: InterpolationType,
 ) -> None:
     burst_images, flow_vectors = single2lrburst(
         image,
         burst_size,
         downsample_factor,
-        transformation_params,
+        transform_params,
         interpolation_type,
     )
 
@@ -100,21 +100,21 @@ def test_single2lrburst_device_invariant(
     image=sized_3hw_tensors(),
     burst_size=st.integers(min_value=1, max_value=20),
     downsample_factor=st.floats(0.25, 1.0),
-    transformation_params=st.none(),  # TODO: Add transformation params
+    transform_params=st.none(),  # TODO: Add transformation params
     interpolation_type=st.sampled_from(get_args(InterpolationType)),
 )
 def test_single2lrburst_dtype_invariant(
     image: Tensor,
     burst_size: int,
     downsample_factor: float,
-    transformation_params: None | ImageTransformationParams,
+    transform_params: None | ImageTransformParams,
     interpolation_type: InterpolationType,
 ) -> None:
     burst_images, flow_vectors = single2lrburst(
         image,
         burst_size,
         downsample_factor,
-        transformation_params,
+        transform_params,
         interpolation_type,
     )
 

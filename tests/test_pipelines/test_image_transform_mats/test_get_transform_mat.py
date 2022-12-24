@@ -10,7 +10,7 @@ from hypothesis_torch_utils.strategies.devices_and_dtypes import DeviceAndDType,
 from hypothesis_torch_utils.strategies.dtypes import torch_float_dtypes
 from torch import Tensor
 
-from mfsr_utils.pipelines.image_transformation_matrices import get_tmat as get_tmat
+from mfsr_utils.pipelines.image_transform_mats import get_transform_mat as get_transform_mat
 
 _IMAGE_SHAPES: st.SearchStrategy[tuple[int, int]] = st.tuples(
     st.integers(min_value=32, max_value=1000),
@@ -35,7 +35,7 @@ _SCALE_FACTORS: st.SearchStrategy[tuple[float, float]] = st.tuples(
 )
 
 
-def _get_tmat_reference(
+def _get_transform_mat_reference(
     image_shape: tuple[int, int],
     translation: tuple[float, float],
     theta: float,
@@ -78,7 +78,7 @@ def _get_tmat_reference(
     return t_mat
 
 
-def given_get_tmat_args(f: Callable[..., None]) -> Callable[..., None]:
+def given_get_transform_mat_args(f: Callable[..., None]) -> Callable[..., None]:
     return given(
         image_shape=_IMAGE_SHAPES,
         translation=_TRANSLATIONS,
@@ -89,8 +89,8 @@ def given_get_tmat_args(f: Callable[..., None]) -> Callable[..., None]:
     )(f)
 
 
-@given_get_tmat_args
-def test_get_tmat_shape(
+@given_get_transform_mat_args
+def test_get_transform_mat_shape(
     image_shape: tuple[int, int],
     translation: tuple[float, float],
     theta: float,
@@ -99,14 +99,14 @@ def test_get_tmat_shape(
     device_and_dtype: DeviceAndDType,
 ) -> None:
     expected = (2, 3)
-    actual = get_tmat(
+    actual = get_transform_mat(
         image_shape, translation, theta, shear_values, scale_factors, **device_and_dtype
     ).shape
     assert expected == actual
 
 
-@given_get_tmat_args
-def test_get_tmat_dtype(
+@given_get_transform_mat_args
+def test_get_transform_mat_dtype(
     image_shape: tuple[int, int],
     translation: tuple[float, float],
     theta: float,
@@ -115,14 +115,14 @@ def test_get_tmat_dtype(
     device_and_dtype: DeviceAndDType,
 ) -> None:
     expected = device_and_dtype["dtype"]
-    actual = get_tmat(
+    actual = get_transform_mat(
         image_shape, translation, theta, shear_values, scale_factors, **device_and_dtype
     ).dtype
     assert expected == actual
 
 
-@given_get_tmat_args
-def test_get_tmat_device(
+@given_get_transform_mat_args
+def test_get_transform_mat_device(
     image_shape: tuple[int, int],
     translation: tuple[float, float],
     theta: float,
@@ -131,14 +131,14 @@ def test_get_tmat_device(
     device_and_dtype: DeviceAndDType,
 ) -> None:
     expected = device_and_dtype["device"]
-    actual = get_tmat(
+    actual = get_transform_mat(
         image_shape, translation, theta, shear_values, scale_factors, **device_and_dtype
     ).device
     assert expected == actual
 
 
-@given_get_tmat_args
-def test_get_tmat_shape_eq_reference_impl_shape(
+@given_get_transform_mat_args
+def test_get_transform_mat_shape_eq_reference_impl_shape(
     image_shape: tuple[int, int],
     translation: tuple[float, float],
     theta: float,
@@ -146,21 +146,21 @@ def test_get_tmat_shape_eq_reference_impl_shape(
     scale_factors: tuple[float, float],
     device_and_dtype: DeviceAndDType,
 ) -> None:
-    expected = _get_tmat_reference(
+    expected = _get_transform_mat_reference(
         image_shape,
         translation,
         theta,
         shear_values,
         scale_factors,
     ).shape
-    actual = get_tmat(
+    actual = get_transform_mat(
         image_shape, translation, theta, shear_values, scale_factors, **device_and_dtype
     ).shape
     assert expected == actual
 
 
-@given_get_tmat_args
-def test_get_tmat_dtype_eq_reference_impl_dtype(
+@given_get_transform_mat_args
+def test_get_transform_mat_values_eq_reference_impl_values(
     image_shape: tuple[int, int],
     translation: tuple[float, float],
     theta: float,
@@ -168,7 +168,7 @@ def test_get_tmat_dtype_eq_reference_impl_dtype(
     scale_factors: tuple[float, float],
     device_and_dtype: DeviceAndDType,
 ) -> None:
-    expected_tmat = _get_tmat_reference(
+    _expected = _get_transform_mat_reference(
         image_shape,
         translation,
         theta,
@@ -177,73 +177,7 @@ def test_get_tmat_dtype_eq_reference_impl_dtype(
     )
     # We don't use the dtype from device_and_dtype here because we're comparing matrices of
     # floating point values and cannot afford to lose precision.
-    actual_tmat = get_tmat(
-        image_shape,
-        translation,
-        theta,
-        shear_values,
-        scale_factors,
-        device=device_and_dtype["device"],
-        dtype=torch.float64,
-    )
-
-    expected = torch.from_numpy(expected_tmat).dtype  # type: ignore
-    actual = actual_tmat.dtype
-    assert expected == actual
-
-
-@given_get_tmat_args
-def test_get_tmat_device_eq_reference_impl_device(
-    image_shape: tuple[int, int],
-    translation: tuple[float, float],
-    theta: float,
-    shear_values: tuple[float, float],
-    scale_factors: tuple[float, float],
-    device_and_dtype: DeviceAndDType,
-) -> None:
-    expected_tmat = _get_tmat_reference(
-        image_shape,
-        translation,
-        theta,
-        shear_values,
-        scale_factors,
-    )
-    # We don't use the device from device_and_dtype here because we're comparing the resulting
-    # devices.
-    actual_tmat = get_tmat(
-        image_shape,
-        translation,
-        theta,
-        shear_values,
-        scale_factors,
-        device=torch.device("cpu"),
-        dtype=device_and_dtype["dtype"],
-    )
-
-    expected = torch.from_numpy(expected_tmat).device  # type: ignore
-    actual = actual_tmat.device
-    assert expected == actual
-
-
-@given_get_tmat_args
-def test_get_tmat_values_eq_reference_impl_values(
-    image_shape: tuple[int, int],
-    translation: tuple[float, float],
-    theta: float,
-    shear_values: tuple[float, float],
-    scale_factors: tuple[float, float],
-    device_and_dtype: DeviceAndDType,
-) -> None:
-    _expected = _get_tmat_reference(
-        image_shape,
-        translation,
-        theta,
-        shear_values,
-        scale_factors,
-    )
-    # We don't use the dtype from device_and_dtype here because we're comparing matrices of
-    # floating point values and cannot afford to lose precision.
-    actual = get_tmat(
+    actual = get_transform_mat(
         image_shape,
         translation,
         theta,

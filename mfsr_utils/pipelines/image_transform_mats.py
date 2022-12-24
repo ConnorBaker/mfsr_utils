@@ -89,7 +89,7 @@ def get_scale_mat(
     )
 
 
-def get_tmat(
+def get_transform_mat(
     image_shape: tuple[int, int],
     translation: tuple[float, float],
     theta: float,

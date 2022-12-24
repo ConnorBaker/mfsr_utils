@@ -13,6 +13,7 @@ from mfsr_utils.datasets.protocols.downloadable import Downloadable
 
 _T = TypeVar("_T", default=Tensor)
 
+
 # TODO: Do I need to normalize the images or convert them to floats?
 # TODO: Document the type of the returned tensor.
 @dataclass
