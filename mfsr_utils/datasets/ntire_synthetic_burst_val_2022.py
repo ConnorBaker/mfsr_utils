@@ -1,27 +1,23 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable
 
 import torch
 import torchvision  # type: ignore[import]
 from torch import Tensor
+from torch.nn import Identity
 from torch.utils.data.dataset import Dataset
-from typing_extensions import ClassVar, TypedDict
+from typing_extensions import ClassVar, TypeVar
 
 from mfsr_utils.datasets.protocols.downloadable import Downloadable
 
 
-# TODO: Should I switch to NamedTuple?
-class NTIRESyntheticBurstValidation2022Data(TypedDict):
-    burst: Tensor
-    gt: Tensor
-
+_T = TypeVar("_T", default=Tensor)
 
 # TODO: Do I need to normalize the images or convert them to floats?
 # TODO: Document the type of the returned tensor.
 @dataclass
-class NTIRESyntheticBurstValidation2022(
-    Dataset[NTIRESyntheticBurstValidation2022Data], Downloadable
-):
+class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):
     """Synthetic burst validation set introduced in [1]. The validation burst have been generated
     using a synthetic data generation pipeline. The dataset can be downloaded from
     https://data.vision.ee.ethz.ch/bhatg/SyntheticBurstVal.zip
@@ -39,6 +35,7 @@ class NTIRESyntheticBurstValidation2022(
 
     data_dir: Path
     burst_size: int = 14
+    transform: Callable[[Tensor], _T] = field(default_factory=Identity)
 
     def __post_init__(self) -> None:
         assert (
@@ -91,13 +88,16 @@ class NTIRESyntheticBurstValidation2022(
         # gt_t = torch.from_numpy(gt.astype(np.float32)).permute(2, 0, 1).float() / 2**14
         return image_png
 
-    def __getitem__(self, index: int) -> NTIRESyntheticBurstValidation2022Data:
+    def __getitem__(self, index: int) -> _T:
         """
         Args:
             index (int): Index of the burst and ground truth image to be returned. Must be in the
                 range [0, 300).
 
         Returns:
+            A tensor of shape [burst_size, 4, 48, 48] and a tensor of shape [3, 384, 384]. The 
+            first tensor contains the burst and the second tensor contains the ground truth image.
+            The 4 channels correspond to 'R', 'G', 'G', and 'B' values in the RGGB bayer mosaick.
             burst: LR RAW burst, a torch tensor of shape [burst_size, 4, 48, 48].
 
                 The 4 channels correspond to 'R', 'G', 'G', and 'B' values in the RGGB bayer
@@ -106,8 +106,9 @@ class NTIRESyntheticBurstValidation2022(
         """
         burst = self._read_burst(index)
         gt = self._read_gt(index)
-
-        return {"burst": burst, "gt": gt}
+        d = torch.tensor([burst, gt])
+        transformed: _T = self.transform(d)
+        return transformed
 
     def __len__(self) -> int:
         return 300

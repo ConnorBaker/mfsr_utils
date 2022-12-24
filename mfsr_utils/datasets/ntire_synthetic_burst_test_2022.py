@@ -1,19 +1,23 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import torch
 import torchvision  # type: ignore[import]
 from torch import Tensor
+from torch.nn import Identity
 from torch.utils.data.dataset import Dataset
-from typing_extensions import ClassVar
+from typing import Callable
+from typing_extensions import ClassVar, TypeVar
 
 from mfsr_utils.datasets.protocols.downloadable import Downloadable
+
+_T = TypeVar("_T", default=Tensor)
 
 
 # TODO: Do I need to normalize the images or convert them to floats?
 # TODO: Document the type of the returned tensor.
 @dataclass
-class NTIRESyntheticBurstTest2022(Dataset[Tensor], Downloadable):
+class NTIRESyntheticBurstTest2022(Dataset[_T], Downloadable):
     """Synthetic burst test set. The test burst have been generated using the same synthetic
     pipeline as employed in SyntheticBurst dataset.
     https://data.vision.ee.ethz.ch/bhatg/synburst_test_2022.zip
@@ -34,8 +38,9 @@ class NTIRESyntheticBurstTest2022(Dataset[Tensor], Downloadable):
 
     data_dir: Path
     burst_size: int = 14
+    transform: Callable[[Tensor], _T] = field(default_factory=Identity)
 
-    def __getitem__(self, index: int) -> Tensor:
+    def __getitem__(self, index: int) -> _T:
         """
         Args:
             index (int): Index of the burst to be returned. Must be in the range [0, 92).
@@ -57,7 +62,8 @@ class NTIRESyntheticBurstTest2022(Dataset[Tensor], Downloadable):
             image_pngs.append(image_png)
 
         stacked = torch.stack(image_pngs)
-        return stacked
+        transformed: _T = self.transform(stacked)
+        return transformed
 
     def __len__(self) -> int:
         return 92
