@@ -11,13 +11,12 @@ from typing_extensions import ClassVar, TypeVar
 
 from mfsr_utils.datasets.protocols.downloadable import Downloadable
 
-
 _T = TypeVar("_T", default=Tensor)
 
 # TODO: Do I need to normalize the images or convert them to floats?
 # TODO: Document the type of the returned tensor.
 @dataclass
-class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):
+class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):  # type: ignore[valid-type]
     """Synthetic burst validation set introduced in [1]. The validation burst have been generated
     using a synthetic data generation pipeline. The dataset can be downloaded from
     https://data.vision.ee.ethz.ch/bhatg/SyntheticBurstVal.zip
@@ -35,7 +34,7 @@ class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):
 
     data_dir: Path
     burst_size: int = 14
-    transform: Callable[[Tensor], _T] = field(default_factory=Identity)
+    transform: Callable[[Tensor], _T] = field(default_factory=Identity)  # type: ignore[valid-type]
 
     def __post_init__(self) -> None:
         assert (
@@ -88,14 +87,14 @@ class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):
         # gt_t = torch.from_numpy(gt.astype(np.float32)).permute(2, 0, 1).float() / 2**14
         return image_png
 
-    def __getitem__(self, index: int) -> _T:
+    def __getitem__(self, index: int) -> _T:  # type: ignore[valid-type]
         """
         Args:
             index (int): Index of the burst and ground truth image to be returned. Must be in the
                 range [0, 300).
 
         Returns:
-            A tensor of shape [burst_size, 4, 48, 48] and a tensor of shape [3, 384, 384]. The 
+            A tensor of shape [burst_size, 4, 48, 48] and a tensor of shape [3, 384, 384]. The
             first tensor contains the burst and the second tensor contains the ground truth image.
             The 4 channels correspond to 'R', 'G', 'G', and 'B' values in the RGGB bayer mosaick.
             burst: LR RAW burst, a torch tensor of shape [burst_size, 4, 48, 48].
@@ -107,7 +106,7 @@ class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):
         burst = self._read_burst(index)
         gt = self._read_gt(index)
         d = torch.tensor([burst, gt])
-        transformed: _T = self.transform(d)
+        transformed: _T = self.transform(d)  # type: ignore[valid-type]
         return transformed
 
     def __len__(self) -> int:
