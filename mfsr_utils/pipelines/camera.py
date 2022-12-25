@@ -150,7 +150,11 @@ def apply_ccm(image: Tensor, ccm: Tensor) -> Tensor:
     Returns:
         Image with CCM applied.
     """
-    return ccm.mm(image.view(3, -1)).view(image.shape).clamp(0.0, 1.0)
+    reshaped = image.reshape(3, -1)
+    transformed = ccm.mm(reshaped)
+    viewed = transformed.view(image.shape)
+    clamped = viewed.clamp(0.0, 1.0)
+    return clamped
 
 
 def mosaic(image: Tensor) -> Tensor:
