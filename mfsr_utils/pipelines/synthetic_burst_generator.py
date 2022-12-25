@@ -52,9 +52,9 @@ def rgb2rawburst(
 
     # Sample camera pipeline params
     if image_processing_params.random_ccm:
-        rgb2cam = random_ccm()
+        rgb2cam = random_ccm(dtype=image.dtype, device=image.device)
     else:
-        rgb2cam = torch.eye(3).float()
+        rgb2cam = torch.eye(3, dtype=image.dtype, device=image.device)
     cam2rgb = rgb2cam.inverse()
 
     # Approximately inverts global tone mapping.
