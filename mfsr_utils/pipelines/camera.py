@@ -81,10 +81,10 @@ def apply_smoothstep(image: Tensor) -> Tensor:
     """Apply global tone mapping curve and clamps to [0, 1].
 
     Args:
-        image: Image to apply tone mapping to.
+        image: Image to apply tone mapping to. Any shape.
 
     Returns:
-        Image with tone mapping applied.
+        Image with tone mapping applied. Shape unchanged.
     """
     smoothstepped: Tensor = image**2 * (3 - 2 * image)
     clamped: Tensor = smoothstepped.clamp(0.0, 1.0)
@@ -95,10 +95,10 @@ def invert_smoothstep(image: Tensor) -> Tensor:
     """Approximately inverts a global tone mapping curve and clamps to [0, 1].
 
     Args:
-        image: Image to invert.
+        image: Image to invert. Any shape.
 
     Returns:
-        Inverted image.
+        Inverted image. Shape unchanged.
     """
     arc_sin: Tensor = torch.asin(1.0 - 2.0 * image.clamp(0.0, 1.0))
     sin: Tensor = torch.sin(arc_sin / 3.0)
@@ -111,10 +111,10 @@ def gamma_expansion(image: Tensor) -> Tensor:
     """Converts from gamma to linear space and clamps to [0, 1].
 
     Args:
-        image: Image to expand.
+        image: Image to expand. Any shape.
 
     Returns:
-        Image in linear space.
+        Image in linear space. Shape unchanged.
     """
     # Clamps to prevent numerical instability of gradients near zero.
     pre_clamped: Tensor = image.clamp(1e-8)
@@ -127,10 +127,10 @@ def gamma_compression(image: Tensor) -> Tensor:
     """Converts from linear to gammaspace and clamps to [0, 1].
 
     Args:
-        image: Image to compress.
+        image: Image to compress. Any shape.
 
     Returns:
-        Image in gamma space.
+        Image in gamma space. Shape unchanged.
     """
     # Clamps to prevent numerical instability of gradients near zero.
     pre_clamped: Tensor = image.clamp(1e-8)
@@ -144,11 +144,11 @@ def apply_ccm(image: Tensor, ccm: Tensor) -> Tensor:
     [0, 1].
 
     Args:
-        image: Image to apply CCM to.
+        image: Image to apply CCM to. Shape (3, H, W).
         ccm: Color correction matrix.
 
     Returns:
-        Image with CCM applied.
+        Image with CCM applied. Shape (3, H, W).
     """
     reshaped = image.reshape(3, -1)
     transformed = ccm.mm(reshaped)
@@ -157,22 +157,22 @@ def apply_ccm(image: Tensor, ccm: Tensor) -> Tensor:
     return clamped
 
 
-def mosaic(image: Tensor) -> Tensor:
-    """Extracts RGGB Bayer planes from an RGB image of shape (3, H, W) and returns a 3D tensor of
-    shape (4, H // 2, W // 2).
+def mosaic(images: Tensor) -> Tensor:
+    """Extracts RGGB Bayer planes from a stack of RGB images of shape (N, 3, H, W) and returns a
+    3D tensor of shape (N, 4, H // 2, W // 2).
 
     Args:
-        image: Image to mosaic.
+        images: Images to mosaic. Shape (N, 3, H, W).
 
     Returns:
-        Mosaiced image.
+        Mosaiced image. Shape (N, 4, H // 2, W // 2).
     """
-    red = image[0, 0::2, 0::2]
-    green_red = image[1, 0::2, 1::2]
-    green_blue = image[1, 1::2, 0::2]
-    blue = image[2, 1::2, 1::2]
-    image = torch.stack((red, green_red, green_blue, blue), dim=0)
-    return image
+    red = images[:, 0, 0::2, 0::2]
+    green_red = images[:, 1, 0::2, 1::2]
+    green_blue = images[:, 1, 1::2, 0::2]
+    blue = images[:, 2, 1::2, 1::2]
+    images = torch.stack((red, green_red, green_blue, blue), dim=1)
+    return images
 
 
 def demosaic(image: Tensor) -> Tensor:
