@@ -1,10 +1,10 @@
 from pathlib import Path
+from typing import ClassVar, Protocol
 
 from torchvision.datasets.utils import (  # type: ignore[import]
     download_and_extract_archive,
     extract_archive,
 )
-from typing_extensions import ClassVar, Protocol
 
 
 class Downloadable(Protocol):

@@ -1,5 +1,6 @@
 import random
 from dataclasses import dataclass, field
+from typing import TypedDict
 
 import cv2  # type: ignore[import]
 import numpy as np
@@ -11,7 +12,6 @@ from torchvision.transforms import (  # type: ignore[import]
     ConvertImageDtype,
     RandomCrop,
 )
-from typing_extensions import TypedDict
 
 # TODO: Refactor to use the new mosaic implementation
 from mfsr_utils.pipelines.camera import (

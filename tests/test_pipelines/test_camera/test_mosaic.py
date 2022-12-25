@@ -1,8 +1,9 @@
+from typing import Literal
+
 import torch
 from hypothesis import given
 from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
-from typing_extensions import Literal
 
 from mfsr_utils.pipelines.camera import demosaic, mosaic
 

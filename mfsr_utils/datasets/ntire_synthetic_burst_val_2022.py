@@ -1,23 +1,22 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Callable, ClassVar, TypeVar
 
 import torch
 import torchvision  # type: ignore[import]
-from torch import Tensor
-from torch.nn import Identity
+from torch import Tensor, nn
 from torch.utils.data.dataset import Dataset
-from typing_extensions import ClassVar, TypeVar
 
 from mfsr_utils.datasets.protocols.downloadable import Downloadable
+from mfsr_utils.datasets.utilities import MFSRData
 
-_T = TypeVar("_T", default=Tensor)
+_T = TypeVar("_T")
 
 
 # TODO: Do I need to normalize the images or convert them to floats?
 # TODO: Document the type of the returned tensor.
 @dataclass
-class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):  # type: ignore[valid-type]
+class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):
     """Synthetic burst validation set introduced in [1]. The validation burst have been generated
     using a synthetic data generation pipeline. The dataset can be downloaded from
     https://data.vision.ee.ethz.ch/bhatg/SyntheticBurstVal.zip
@@ -35,7 +34,7 @@ class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):  # type: ign
 
     data_dir: Path
     burst_size: int = 14
-    transform: Callable[[Tensor], _T] = field(default_factory=Identity)  # type: ignore[valid-type]
+    transform: Callable[[MFSRData], _T] = nn.Identity()
 
     def __post_init__(self) -> None:
         assert (
@@ -88,7 +87,8 @@ class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):  # type: ign
         # gt_t = torch.from_numpy(gt.astype(np.float32)).permute(2, 0, 1).float() / 2**14
         return image_png
 
-    def __getitem__(self, index: int) -> _T:  # type: ignore[valid-type]
+    # TODO(@connorbaker): Update the docstring
+    def __getitem__(self, index: int) -> _T:
         """
         Args:
             index (int): Index of the burst and ground truth image to be returned. Must be in the
@@ -106,8 +106,8 @@ class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):  # type: ign
         """
         burst = self._read_burst(index)
         gt = self._read_gt(index)
-        d = torch.tensor([burst, gt])
-        transformed: _T = self.transform(d)  # type: ignore[valid-type]
+        d: MFSRData = MFSRData(burst, gt)
+        transformed: _T = self.transform(d)
         return transformed
 
     def __len__(self) -> int:

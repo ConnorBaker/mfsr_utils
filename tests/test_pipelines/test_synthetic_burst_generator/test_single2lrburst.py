@@ -1,9 +1,10 @@
+from typing import get_args
+
 import torch
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
-from typing_extensions import get_args
 
 from mfsr_utils.pipelines.image_transform_params import ImageTransformParams
 from mfsr_utils.pipelines.synthetic_burst_generator import single2lrburst

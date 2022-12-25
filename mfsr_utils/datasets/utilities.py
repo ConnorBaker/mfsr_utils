@@ -1,17 +1,23 @@
+from dataclasses import dataclass
+from typing import TypeVar, overload
+
 import numpy as np
 import torch
 from numpy import floating, ndarray
 from numpy.typing import NBitBase, NDArray
 from torch import Tensor
-from typing_extensions import TypeVar, overload
 
-_T = TypeVar("_T", bound=NBitBase)
+_FloatPrec = TypeVar("_FloatPrec", bound=NBitBase)
+
+
+@dataclass(slots=True)
+class MFSRData:
+    burst: Tensor
+    gt: Tensor
 
 
 @overload
-def pack_raw_image(
-    im_raw: NDArray[floating[_T]],  # type: ignore[valid-type]
-) -> NDArray[floating[_T]]:  # type: ignore[valid-type]
+def pack_raw_image(im_raw: NDArray[floating[_FloatPrec]]) -> NDArray[floating[_FloatPrec]]:
     ...
 
 
@@ -21,9 +27,9 @@ def pack_raw_image(im_raw: Tensor) -> Tensor:
 
 
 def pack_raw_image(
-    im_raw: NDArray[floating[_T]] | Tensor,  # type: ignore[valid-type]
-) -> NDArray[floating[_T]] | Tensor:  # type: ignore[valid-type]
-    im_out: NDArray[floating[_T]] | Tensor  # type: ignore[valid-type]
+    im_raw: NDArray[floating[_FloatPrec]] | Tensor,
+) -> NDArray[floating[_FloatPrec]] | Tensor:
+    im_out: NDArray[floating[_FloatPrec]] | Tensor
     new_shape: tuple[int, int, int] = (4, im_raw.shape[0] // 2, im_raw.shape[1] // 2)
     match im_raw:
         case ndarray():
@@ -42,9 +48,7 @@ def pack_raw_image(
 
 
 @overload
-def flatten_raw_image(
-    im_raw_4ch: NDArray[floating[_T]],  # type: ignore[valid-type]
-) -> NDArray[floating[_T]]:  # type: ignore[valid-type]
+def flatten_raw_image(im_raw_4ch: NDArray[floating[_FloatPrec]]) -> NDArray[floating[_FloatPrec]]:
     ...
 
 
@@ -54,9 +58,9 @@ def flatten_raw_image(im_raw_4ch: Tensor) -> Tensor:
 
 
 def flatten_raw_image(
-    im_raw_4ch: NDArray[floating[_T]] | Tensor,  # type: ignore[valid-type]
-) -> NDArray[floating[_T]] | Tensor:  # type: ignore[valid-type]
-    im_out: NDArray[floating[_T]] | Tensor  # type: ignore[valid-type]
+    im_raw_4ch: NDArray[floating[_FloatPrec]] | Tensor,
+) -> NDArray[floating[_FloatPrec]] | Tensor:
+    im_out: NDArray[floating[_FloatPrec]] | Tensor
     new_shape = (3, im_raw_4ch.shape[1] * 2, im_raw_4ch.shape[2] * 2)
     match im_raw_4ch:
         case ndarray():

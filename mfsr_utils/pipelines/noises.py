@@ -3,10 +3,10 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass
+from typing import ClassVar
 
 import torch
 from torch import Tensor
-from typing_extensions import ClassVar
 
 
 @dataclass

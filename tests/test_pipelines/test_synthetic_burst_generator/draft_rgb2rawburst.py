@@ -1,10 +1,11 @@
+from typing import get_args
+
 import torch
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.strategies._internal.core import RandomSeeder
 from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
-from typing_extensions import get_args
 
 from mfsr_utils.pipelines.image_processing_params import ImageProcessingParams
 from mfsr_utils.pipelines.image_transform_params import ImageTransformParams
