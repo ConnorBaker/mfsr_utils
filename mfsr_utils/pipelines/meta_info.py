@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from functools import partial
 
 from torch import Tensor
 
@@ -17,5 +18,5 @@ class MetaInfo:
     black_level: None | Tensor = None
     while_balance_applied: bool = False
     cam_wb: None | Tensor = None
-    gains: RgbGains = field(default_factory=lambda: RgbGains(0.0, 0.0, 0.0))
-    noises: Noises = field(default_factory=lambda: Noises(0.0, 0.0))
+    gains: RgbGains = field(default_factory=partial(RgbGains, 0.0, 0.0, 0.0))
+    noises: Noises = field(default_factory=partial(Noises, 0.0, 0.0))

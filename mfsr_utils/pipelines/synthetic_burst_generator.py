@@ -1,5 +1,6 @@
 import random
 from dataclasses import dataclass, field
+from functools import partial
 from typing import TypedDict
 
 import cv2  # type: ignore[import]
@@ -365,7 +366,8 @@ class SyntheticBurstGeneratorTransform(torch.nn.Module):
     final_crop_sz: int = field(init=False)
     downsample_factor: int = 4
     burst_transform_params: ImageTransformParams = field(
-        default_factory=lambda: ImageTransformParams(
+        default_factory=partial(
+            ImageTransformParams,
             max_translation=24.0,
             max_rotation=1.0,
             max_shear=0.0,
@@ -374,7 +376,8 @@ class SyntheticBurstGeneratorTransform(torch.nn.Module):
         )
     )
     image_processing_params: ImageProcessingParams = field(
-        default_factory=lambda: ImageProcessingParams(
+        default_factory=partial(
+            ImageProcessingParams,
             random_ccm=False,
             random_gains=False,
             smoothstep=False,
