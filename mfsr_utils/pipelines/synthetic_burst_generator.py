@@ -364,19 +364,23 @@ class SyntheticBurstGeneratorTransform(torch.nn.Module):
     dtype: torch.dtype
     final_crop_sz: int = field(init=False)
     downsample_factor: int = 4
-    burst_transform_params: ImageTransformParams = ImageTransformParams(
-        max_translation=24.0,
-        max_rotation=1.0,
-        max_shear=0.0,
-        max_scale=0.0,
-        border_crop=24,
+    burst_transform_params: ImageTransformParams = field(
+        default_factory=lambda: ImageTransformParams(
+            max_translation=24.0,
+            max_rotation=1.0,
+            max_shear=0.0,
+            max_scale=0.0,
+            border_crop=24,
+        )
     )
-    image_processing_params: ImageProcessingParams = ImageProcessingParams(
-        random_ccm=False,
-        random_gains=False,
-        smoothstep=False,
-        compress_gamma=False,
-        add_noise=False,
+    image_processing_params: ImageProcessingParams = field(
+        default_factory=lambda: ImageProcessingParams(
+            random_ccm=False,
+            random_gains=False,
+            smoothstep=False,
+            compress_gamma=False,
+            add_noise=False,
+        )
     )
     interpolation_type: InterpolationType = "bilinear"
 
