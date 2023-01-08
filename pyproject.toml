@@ -14,19 +14,20 @@ readme = "README.md"
 urls = { homepage = "https://github.com/connorbaker/mfsr_utils" }
 requires-python = ">=3.10"
 dependencies = [
-    "torch==2.0.0.*",
-    "torchvision==0.15.0.*",
-    "opencv-python-headless==4.7.0.68",
+    "torch>=1.8",
+    "torchvision>=0.9",
+    # "torchvision @ git+https://github.com/pytorch/vision.git@1353df9e45aae6739c23db4a053c3d9a9fd17b3d",
+    "opencv-python-headless>=4.7",
 ]
 
 [project.optional-dependencies]
-lint = ["black==22.12.0", "flake8==6.0.0", "isort==5.11.4"]
-typecheck = ["pyright==1.1.287", "mypy==0.991"]
+lint = ["black>=22.12.0", "flake8>=6.0.0", "isort>=5.11.4"]
+typecheck = ["pyright>=1.1.287", "mypy>=0.991"]
 test = [
-    "pytest==7.2.0",
-    "pytest-xdist==3.1.0",
-    "hypothesis==6.61.0",
-    "hypothesis_torch_utils @ git+https://github.com/ConnorBaker/hypothesis_torch_utils.git@44de841ab38cbbb75de0b11a292bdb22f2ef9498",
+    "pytest>=7.2.0",
+    "pytest-xdist>=3.1.0",
+    "hypothesis>=6.61.0",
+    "hypothesis_torch_utils @ git+https://github.com/ConnorBaker/hypothesis_torch_utils.git@6a148268ee3f384c67f2f3cd15333e2b836c715b",
 ]
 
 [tool.setuptools]
