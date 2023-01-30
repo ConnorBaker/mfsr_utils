@@ -15,19 +15,11 @@ from torchvision.transforms import (  # type: ignore[import]
 )
 
 # TODO: Refactor to use the new mosaic implementation
-from mfsr_utils.pipelines.camera import (
-    apply_ccm,
-    gamma_expansion,
-    invert_smoothstep,
-    mosaic,
-    random_ccm,
-)
+from mfsr_utils.pipelines import camera
 from mfsr_utils.pipelines.image_processing_params import ImageProcessingParams
 from mfsr_utils.pipelines.image_transform_mats import get_transform_mat
 from mfsr_utils.pipelines.image_transform_params import ImageTransformParams
 from mfsr_utils.pipelines.meta_info import MetaInfo
-from mfsr_utils.pipelines.noises import Noises
-from mfsr_utils.pipelines.rgb_gains import RgbGains
 from mfsr_utils.pipelines.types import InterpolationType
 
 # TODO: Find a clean way to know which device to allocate the tensors on.
@@ -51,32 +43,20 @@ def rgb2rawburst(
     if image_processing_params is None:
         image_processing_params = ImageProcessingParams()
 
-    # Sample camera pipeline params
-    if image_processing_params.random_ccm:
-        rgb2cam = random_ccm(dtype=image.dtype, device=image.device)
-    else:
-        rgb2cam = torch.eye(3, dtype=image.dtype, device=image.device)
-    cam2rgb = rgb2cam.inverse()
-
     # Approximately inverts global tone mapping.
     if image_processing_params.smoothstep:
-        image = invert_smoothstep(image)
+        image = camera.invert_smoothstep(image)
 
     # Inverts gamma compression.
     if image_processing_params.compress_gamma:
-        image = gamma_expansion(image)
+        image = camera.gamma_expansion(image)
 
     # Inverts color correction.
-    image = apply_ccm(image, rgb2cam)
+    image = camera.apply_ccm(image, image_processing_params.rgb2cam)
 
     # Sample gains
     # FIXME: This just makes the image VERY green.
-    if image_processing_params.random_gains:
-        # Approximately inverts white balance and brightening.
-        gains = RgbGains.random_gains()
-        image = gains.safe_invert_gains(image)
-    else:
-        gains = RgbGains(1.0, 1.0, 1.0)
+    image = image_processing_params.gain(image)
 
     # Clip saturated pixels.
     image = image.clamp(0.0, 1.0)
@@ -91,25 +71,24 @@ def rgb2rawburst(
     )
 
     # mosaic
-    image_burst = mosaic(image_burst_rgb.clone())
+    image_burst = camera.mosaic(image_burst_rgb.clone())
 
     # Add noise
-    if image_processing_params.add_noise:
-        noises = Noises.random_noise_levels()
-        image_burst = noises.apply(image_burst)
-    else:
-        noises = Noises(0.0, 0.0)
+    # TODO: This is only acceptable if Noises(0, 0) is the identity under apply. If it isn't, we
+    #       need to move the definition of noises inside an if statement to avoid applying it when
+    #       add_noise is False.
+    image_burst = image_processing_params.noise(image_burst)
 
     # Clip saturated pixels.
     image_burst = image_burst.clamp(0.0, 1.0)
 
     meta_info = MetaInfo(
-        rgb2cam=rgb2cam,
-        cam2rgb=cam2rgb,
-        gains=gains,
+        rgb2cam=image_processing_params.rgb2cam,
+        cam2rgb=image_processing_params.cam2rgb,
+        gain=image_processing_params.gain,
         smoothstep=image_processing_params.smoothstep,
         compress_gamma=image_processing_params.compress_gamma,
-        noises=noises,
+        noise=image_processing_params.noise,
     )
 
     return image_burst, image, image_burst_rgb, flow_vectors, meta_info

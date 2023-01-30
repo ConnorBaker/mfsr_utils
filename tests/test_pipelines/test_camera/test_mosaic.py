@@ -1,11 +1,22 @@
-from typing import Literal
+from typing import Callable, Literal, cast, get_args
 
+import pytest
 import torch
 from hypothesis import given
 from hypothesis_torch_utils.strategies.sized_n3hw_tensors import sized_n3hw_tensors
 from torch import Tensor
 
 from mfsr_utils.pipelines.camera import demosaic, mosaic
+from tests.utils import (
+    DeviceName,
+    FloatDtypeName,
+    TensorInvariantFnName,
+    get_device,
+    get_float_dtype,
+    get_tensor_invariant_fn,
+    parametrize_device_name_float_dtype_name,
+    parametrize_tensor_invariant_fn_name,
+)
 
 
 def _mosaic_reference(image: Tensor, mode: Literal["grbg", "rggb"] = "rggb") -> Tensor:
@@ -33,171 +44,118 @@ def _mosaic_reference(image: Tensor, mode: Literal["grbg", "rggb"] = "rggb") -> 
         return image.view((-1, 4, shape[-2] // 2, shape[-1] // 2))
 
 
-# Property-based tests which ensure:
-# - The mosaiced image has four channels
-# - The mosaiced image is half the height of the original image
-# - The mosaiced image is half the width of the original image
-# - The mosaiced image has the same dtype as the original image
-# - The mosaiced image is on the same device as the original image
-# - The demosaiced image has the same shape as the original image
-# - The demosaiced image has the same dtype as the original image
-# - The demosaiced image is on the same device as the original image
+MosaicFnTy = Callable[[Tensor], Tensor]
+MosaicFnName = Literal["mosaic", "compiled_mosaic"]
+compiled_mosaic = cast(MosaicFnTy, torch.compile(mosaic))  # type: ignore
+parametrize_mosaic_fn_name = pytest.mark.parametrize("mosaic_fn_name", get_args(MosaicFnName))
 
 
-@given(image=sized_n3hw_tensors())
-def test_mosaic_has_four_channels(image: Tensor) -> None:
+def get_mosaic_fn(mosaic_fn_name: MosaicFnName) -> MosaicFnTy:
+    match mosaic_fn_name:
+        case "mosaic":
+            return mosaic
+        case "compiled_mosaic":
+            return compiled_mosaic  # type: ignore
+
+
+@parametrize_device_name_float_dtype_name
+@parametrize_tensor_invariant_fn_name
+@parametrize_mosaic_fn_name
+def test_mosaic_tensor_invariant(
+    device_name: DeviceName,
+    float_dtype_name: FloatDtypeName,
+    tensor_invariant_fn_name: TensorInvariantFnName,
+    mosaic_fn_name: MosaicFnName,
+) -> None:
     """
-    Tests that the mosaiced image has four channels.
+    Tests that mosaic preserves a given tensor invariant.
 
     Args:
-        image: A N3HW image of floating dtype
+        device_name: The name of the device to run the test on
+        float_dtype_name: The name of the floating dtype to use
+        tensor_invariant_fn_name: The name of the tensor invariant to test
+        mosaic_fn_name: The name of the mosaic function to test
     """
-    expected = 4
-    _, actual, _, _ = mosaic(image).shape
-    assert actual == expected
+    device: torch.device = get_device(device_name)
+    dtype: torch.dtype = get_float_dtype(float_dtype_name)
+    invariant_fn = get_tensor_invariant_fn(tensor_invariant_fn_name)
+    mosaic_fn = get_mosaic_fn(mosaic_fn_name)
+    search_strategy = sized_n3hw_tensors(device=device, dtype=dtype)
+
+    @given(image=search_strategy)
+    def test(image: Tensor) -> None:
+        old_shape = list(image.shape)
+        old_shape[-3] = 4
+        old_shape[-2] //= 2
+        old_shape[-1] //= 2
+        expected = torch.empty(old_shape, dtype=image.dtype, device=image.device)
+        actual = mosaic_fn(image)
+        invariant_holds = invariant_fn(expected, actual)
+        assert invariant_holds
+
+    test()
 
 
-@given(image=sized_n3hw_tensors())
-def test_mosaic_has_half_height(image: Tensor) -> None:
+@parametrize_device_name_float_dtype_name
+@parametrize_tensor_invariant_fn_name
+@parametrize_mosaic_fn_name
+def test_demosaic_tensor_invariant(
+    device_name: DeviceName,
+    float_dtype_name: FloatDtypeName,
+    tensor_invariant_fn_name: TensorInvariantFnName,
+    mosaic_fn_name: MosaicFnName,
+) -> None:
     """
-    Tests that the mosaiced image is half the height of the original image.
+    Tests that demosaic preserves a given tensor invariant.
 
     Args:
-        image: A N3HW image of floating dtype
+        device_name: The name of the device to run the test on
+        float_dtype_name: The name of the floating dtype to use
+        tensor_invariant_fn_name: The name of the tensor invariant to test
+        mosaic_fn_name: The name of the mosaic function to test
     """
-    expected = image.shape[-2] // 2
-    actual = mosaic(image).shape[-2]
-    assert actual == expected
+    device: torch.device = get_device(device_name)
+    dtype: torch.dtype = get_float_dtype(float_dtype_name)
+    invariant_fn = get_tensor_invariant_fn(tensor_invariant_fn_name)
+    mosaic_fn = get_mosaic_fn(mosaic_fn_name)
+    search_strategy = sized_n3hw_tensors(device=device, dtype=dtype)
+
+    @given(image=search_strategy)
+    def test(image: Tensor) -> None:
+        mosaiced_image = mosaic_fn(image)
+        actual = demosaic(mosaiced_image)
+
+        invariant_holds = invariant_fn(image, actual)
+        assert invariant_holds
+
+    test()
 
 
-@given(image=sized_n3hw_tensors())
-def test_mosaic_has_half_width(image: Tensor) -> None:
-    """
-    Tests that the mosaiced image is half the width of the original image.
-
-    Args:
-        image: A N3HW image of floating dtype
-    """
-    expected = image.shape[-1] // 2
-    actual = mosaic(image).shape[-1]
-    assert actual == expected
-
-
-@given(image=sized_n3hw_tensors())
-def test_mosaic_dtype_invariance(image: Tensor) -> None:
-    """
-    Tests that the mosaiced image has the same dtype as the original image.
-
-    Args:
-        image: A N3HW image of floating dtype
-    """
-    expected = image.dtype
-    actual = mosaic(image).dtype
-    assert actual == expected
-
-
-@given(image=sized_n3hw_tensors())
-def test_mosaic_device_invariance(image: Tensor) -> None:
-    """
-    Tests that the mosaiced image is on the same device as the original image.
-
-    Args:
-        image: A N3HW image of floating dtype
-    """
-    expected = image.device
-    actual = mosaic(image).device
-    assert actual == expected
-
-
-@given(image=sized_n3hw_tensors())
-def test_demosaic_shape_invariance(image: Tensor) -> None:
-    """
-    Tests that the demosaiced image has the same shape as the original image.
-
-    Args:
-        image: A N3HW image of floating dtype
-    """
-    expected = image.shape
-    mosaiced_image = mosaic(image)
-    actual = demosaic(mosaiced_image).shape
-    assert actual == expected
-
-
-@given(image=sized_n3hw_tensors())
-def test_demosaic_dtype_invariance(image: Tensor) -> None:
-    """
-    Tests that the demosaiced image has the same dtype as the original image.
-
-    Args:
-        image: A N3HW image of floating dtype
-    """
-    expected = image.dtype
-    mosaiced_image = mosaic(image)
-    actual = demosaic(mosaiced_image).dtype
-    assert actual == expected
-
-
-@given(image=sized_n3hw_tensors())
-def test_demosaic_device_invariance(image: Tensor) -> None:
-    """
-    Tests that the demosaiced image is on the same device as the original image.
-
-    Args:
-        image: A N3HW image of floating dtype
-    """
-    expected = image.device
-    mosaiced_image = mosaic(image)
-    actual = demosaic(mosaiced_image).device
-    assert actual == expected
-
-
-@given(image=sized_n3hw_tensors())
-def test_mosaic_dtype_matches_mosaic_reference_dtype(image: Tensor) -> None:
-    """
-    Tests that the mosaiced image has the same dtype as the original image.
-
-    Args:
-        image: A N3HW image of floating dtype
-    """
-    expected = _mosaic_reference(image).dtype
-    actual = mosaic(image).dtype
-    assert actual == expected
-
-
-@given(image=sized_n3hw_tensors())
-def test_mosaic_device_matches_mosaic_reference_device(image: Tensor) -> None:
-    """
-    Tests that the mosaiced image is on the same device as the original image.
-
-    Args:
-        image: A N3HW image of floating dtype
-    """
-    expected = _mosaic_reference(image).device
-    actual = mosaic(image).device
-    assert actual == expected
-
-
-@given(image=sized_n3hw_tensors())
-def test_mosaic_shape_matches_mosaic_reference_shape(image: Tensor) -> None:
-    """
-    Tests that the mosaiced image has the same shape as the original image.
-
-    Args:
-        image: A N3HW image of floating dtype
-    """
-    expected = _mosaic_reference(image).shape
-    actual = mosaic(image).shape
-    assert actual == expected
-
-
-@given(image=sized_n3hw_tensors())
-def test_mosaic_values_match_mosaic_reference_values(image: Tensor) -> None:
+@parametrize_device_name_float_dtype_name
+@parametrize_mosaic_fn_name
+def test_mosaic_values_match_mosaic_reference_values(
+    device_name: DeviceName,
+    float_dtype_name: FloatDtypeName,
+    mosaic_fn_name: MosaicFnName,
+) -> None:
     """
     Tests that the mosaiced image has the same values as the original image.
 
     Args:
-        image: A N3HW image of floating dtype
+        device_name: The name of the device to run the test on
+        float_dtype_name: The name of the floating dtype to use
+        mosaic_fn_name: The name of the mosaic function to test
     """
-    expected = _mosaic_reference(image)
-    actual = mosaic(image)
-    assert torch.allclose(actual, expected)
+    device: torch.device = get_device(device_name)
+    dtype: torch.dtype = get_float_dtype(float_dtype_name)
+    mosaic_fn = get_mosaic_fn(mosaic_fn_name)
+    search_strategy = sized_n3hw_tensors(device=device, dtype=dtype)
+
+    @given(image=search_strategy)
+    def test(image: Tensor) -> None:
+        expected = _mosaic_reference(image)
+        actual = mosaic_fn(image)
+
+        assert actual.allclose(expected)
+
+    test()

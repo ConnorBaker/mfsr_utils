@@ -13,6 +13,14 @@ on:
 
 jobs:
   pytest:
+    strategy:
+      matrix:
+        test-profile:
+          - dev
+          - dev_slow
+          - ci
+          - ci_slow
+      fail-fast: false
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -24,5 +32,5 @@ jobs:
       - run: python3 -m pip install pip --upgrade
       - run: python3 -m pip install --pre --extra-index-url https://download.pytorch.org/whl/nightly/cpu '.[test]'
       - run: echo "::add-matcher::./.github/problem_matchers/pytest.jsonc"
-      - run: pytest -n1 --durations=0 --hypothesis-show-statistics --hypothesis-profile ci_cpu
+      - run: pytest -n1 --durations=0 --hypothesis-show-statistics --hypothesis-profile ${{ matrix.test-profile }}
       - run: echo "::remove-matcher owner=pytest::"

@@ -1,16 +1,55 @@
-from typing import Callable
+from typing import Callable, Literal, cast, get_args
 
 import cv2  # type: ignore[import]
 import numpy as np
 import numpy.typing as npt
+import pytest
 import torch
 from hypothesis import given
 from hypothesis import strategies as st
-from hypothesis_torch_utils.strategies.devices_and_dtypes import DeviceAndDType, devices_and_dtypes
-from hypothesis_torch_utils.strategies.dtypes import torch_float_dtypes
 from torch import Tensor
 
 from mfsr_utils.pipelines.image_transform_mats import get_transform_mat as get_transform_mat
+from tests.utils import (
+    DeviceName,
+    FloatDtypeName,
+    TensorInvariantFnName,
+    get_device,
+    get_float_dtype,
+    get_tensor_invariant_fn,
+    parametrize_device_name,
+    parametrize_device_name_float_dtype_name,
+    parametrize_tensor_invariant_fn_name,
+)
+
+GetTransformMatFnTy = Callable[
+    [
+        tuple[int, int],
+        tuple[float, float],
+        float,
+        tuple[float, float],
+        tuple[float, float],
+        torch.dtype,
+        torch.device,
+    ],
+    Tensor,
+]
+GetTransformMatFnName = Literal["get_transform_mat", "compiled_get_transform_mat"]
+compiled_get_transform_mat = cast(
+    GetTransformMatFnTy, torch.compile(get_transform_mat)  # type: ignore
+)
+parametrize_get_transform_mat_fn_name = pytest.mark.parametrize(
+    "get_transform_mat_fn_name", get_args(GetTransformMatFnName)
+)
+
+
+def get_transform_mat_fn(get_transform_mat_fn_name: GetTransformMatFnName) -> GetTransformMatFnTy:
+    match get_transform_mat_fn_name:
+        case "get_transform_mat":
+            return get_transform_mat
+        case "compiled_get_transform_mat":
+            return compiled_get_transform_mat
+
 
 _IMAGE_SHAPES: st.SearchStrategy[tuple[int, int]] = st.tuples(
     st.integers(min_value=32, max_value=1000),
@@ -78,74 +117,61 @@ def _get_transform_mat_reference(
     return t_mat
 
 
-def given_get_transform_mat_args(f: Callable[..., None]) -> Callable[..., None]:
-    return given(
-        image_shape=_IMAGE_SHAPES,
-        translation=_TRANSLATIONS,
-        theta=_THETAS,
-        shear_values=_SHEAR_VALUES,
-        scale_factors=_SCALE_FACTORS,
-        device_and_dtype=devices_and_dtypes(dtype=torch_float_dtypes),
-    )(f)
+given_get_transform_mat_args = given(
+    image_shape=_IMAGE_SHAPES,
+    translation=_TRANSLATIONS,
+    theta=_THETAS,
+    shear_values=_SHEAR_VALUES,
+    scale_factors=_SCALE_FACTORS,
+)
 
 
+@parametrize_device_name_float_dtype_name
+@parametrize_tensor_invariant_fn_name
+@parametrize_get_transform_mat_fn_name
 @given_get_transform_mat_args
-def test_get_transform_mat_shape(
+def test_get_transform_mat_tensor_invariant(
+    device_name: DeviceName,
+    float_dtype_name: FloatDtypeName,
+    tensor_invariant_fn_name: TensorInvariantFnName,
+    get_transform_mat_fn_name: GetTransformMatFnName,
     image_shape: tuple[int, int],
     translation: tuple[float, float],
     theta: float,
     shear_values: tuple[float, float],
     scale_factors: tuple[float, float],
-    device_and_dtype: DeviceAndDType,
 ) -> None:
-    expected = (2, 3)
-    actual = get_transform_mat(
-        image_shape, translation, theta, shear_values, scale_factors, **device_and_dtype
-    ).shape
-    assert expected == actual
+    device: torch.device = get_device(device_name)
+    dtype: torch.dtype = get_float_dtype(float_dtype_name)
+    invariant_fn = get_tensor_invariant_fn(tensor_invariant_fn_name)
+    transform_mat_fn = get_transform_mat_fn(get_transform_mat_fn_name)
+
+    expected = torch.empty((2, 3), device=device, dtype=dtype)
+
+    actual = transform_mat_fn(
+        image_shape, translation, theta, shear_values, scale_factors, dtype, device
+    )
+    invariant_holds = invariant_fn(expected, actual)
+    assert invariant_holds
 
 
-@given_get_transform_mat_args
-def test_get_transform_mat_dtype(
-    image_shape: tuple[int, int],
-    translation: tuple[float, float],
-    theta: float,
-    shear_values: tuple[float, float],
-    scale_factors: tuple[float, float],
-    device_and_dtype: DeviceAndDType,
-) -> None:
-    expected = device_and_dtype["dtype"]
-    actual = get_transform_mat(
-        image_shape, translation, theta, shear_values, scale_factors, **device_and_dtype
-    ).dtype
-    assert expected == actual
-
-
-@given_get_transform_mat_args
-def test_get_transform_mat_device(
-    image_shape: tuple[int, int],
-    translation: tuple[float, float],
-    theta: float,
-    shear_values: tuple[float, float],
-    scale_factors: tuple[float, float],
-    device_and_dtype: DeviceAndDType,
-) -> None:
-    expected = device_and_dtype["device"]
-    actual = get_transform_mat(
-        image_shape, translation, theta, shear_values, scale_factors, **device_and_dtype
-    ).device
-    assert expected == actual
-
-
+@parametrize_device_name_float_dtype_name
+@parametrize_get_transform_mat_fn_name
 @given_get_transform_mat_args
 def test_get_transform_mat_shape_eq_reference_impl_shape(
+    device_name: DeviceName,
+    float_dtype_name: FloatDtypeName,
+    get_transform_mat_fn_name: GetTransformMatFnName,
     image_shape: tuple[int, int],
     translation: tuple[float, float],
     theta: float,
     shear_values: tuple[float, float],
     scale_factors: tuple[float, float],
-    device_and_dtype: DeviceAndDType,
 ) -> None:
+    device: torch.device = get_device(device_name)
+    dtype: torch.dtype = get_float_dtype(float_dtype_name)
+    transform_mat_fn = get_transform_mat_fn(get_transform_mat_fn_name)
+
     expected = _get_transform_mat_reference(
         image_shape,
         translation,
@@ -153,21 +179,27 @@ def test_get_transform_mat_shape_eq_reference_impl_shape(
         shear_values,
         scale_factors,
     ).shape
-    actual = get_transform_mat(
-        image_shape, translation, theta, shear_values, scale_factors, **device_and_dtype
+    actual = transform_mat_fn(
+        image_shape, translation, theta, shear_values, scale_factors, dtype, device
     ).shape
     assert expected == actual
 
 
+@parametrize_device_name
+@parametrize_get_transform_mat_fn_name
 @given_get_transform_mat_args
 def test_get_transform_mat_values_eq_reference_impl_values(
+    device_name: DeviceName,
+    get_transform_mat_fn_name: GetTransformMatFnName,
     image_shape: tuple[int, int],
     translation: tuple[float, float],
     theta: float,
     shear_values: tuple[float, float],
     scale_factors: tuple[float, float],
-    device_and_dtype: DeviceAndDType,
 ) -> None:
+    device: torch.device = get_device(device_name)
+    transform_mat_fn = get_transform_mat_fn(get_transform_mat_fn_name)
+
     _expected = _get_transform_mat_reference(
         image_shape,
         translation,
@@ -177,16 +209,16 @@ def test_get_transform_mat_values_eq_reference_impl_values(
     )
     # We don't use the dtype from device_and_dtype here because we're comparing matrices of
     # floating point values and cannot afford to lose precision.
-    actual = get_transform_mat(
+    actual = transform_mat_fn(
         image_shape,
         translation,
         theta,
         shear_values,
         scale_factors,
-        device=device_and_dtype["device"],
-        dtype=torch.float64,
+        torch.float64,
+        device,
     )
     expected: Tensor = torch.from_numpy(_expected).to(  # type: ignore
         device=actual.device, dtype=actual.dtype
     )
-    assert torch.allclose(expected, actual)
+    assert actual.allclose(expected)

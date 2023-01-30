@@ -1,120 +1,135 @@
+from typing import Callable, Literal, cast, get_args
+
+import pytest
 import torch
 from hypothesis import given
 from hypothesis_torch_utils.strategies.sized_3hw_tensors import sized_3hw_tensors
 from torch import Tensor
 
 from mfsr_utils.pipelines.camera import gamma_compression, gamma_expansion
+from tests.utils import (
+    DeviceName,
+    FloatDtypeName,
+    TensorInvariantFnName,
+    get_device,
+    get_float_dtype,
+    get_tensor_invariant_fn,
+    parametrize_device_name_float_dtype_name,
+    parametrize_tensor_invariant_fn_name,
+)
 
-# Property-based tests which ensure:
-# - gamma_expansion is invariant with respect to shape
-# - gamma_compression is invariant with respect to shape
-# - gamma_expansion is invariant with respect to dtype
-# - gamma_compression is invariant with respect to dtype
-# - gamma_expansion is invariant with respect to device
-# - gamma_compression is invariant with respect to device
-# - gamma_expansion is the inverse of gamma_compression (roughly)
-# - gamma_compression is the inverse of gamma_expansion (roughly)
+GammaFnTy = Callable[[Tensor], Tensor]
+GammaExpansionFnName = Literal["gamma_expansion", "compiled_gamma_expansion"]
+compiled_gamma_expansion = cast(GammaFnTy, torch.compile(gamma_expansion))  # type: ignore
+parametrize_gamma_expansion_fn_name = pytest.mark.parametrize(
+    "gamma_expansion_fn_name", get_args(GammaExpansionFnName)
+)
+GammaCompressionFnName = Literal["gamma_compression", "compiled_gamma_compression"]
+compiled_gamma_compression = cast(GammaFnTy, torch.compile(gamma_compression))  # type: ignore
+parametrize_gamma_compression_fn_name = pytest.mark.parametrize(
+    "gamma_compression_fn_name", get_args(GammaCompressionFnName)
+)
+GammaFnName = Literal[GammaExpansionFnName, GammaCompressionFnName]
+parametrize_gamma_fn_name = pytest.mark.parametrize("gamma_fn_name", get_args(GammaFnName))
 
 
-@given(image=sized_3hw_tensors())
-def test_gamma_expansion_shape_invariance(image: Tensor) -> None:
+def get_gamma_fn(gamma_fn_name: GammaFnName) -> GammaFnTy:
+    match gamma_fn_name:
+        case "gamma_expansion":
+            return gamma_expansion
+        case "compiled_gamma_expansion":
+            return compiled_gamma_expansion
+        case "gamma_compression":
+            return gamma_compression
+        case "compiled_gamma_compression":
+            return compiled_gamma_compression
+
+
+GammaComposedFnName = Literal["expansion_then_compression", "compression_then_expansion"]
+parametrize_gamma_composed_fn_name = pytest.mark.parametrize(
+    "gamma_composed_fn_name", get_args(GammaComposedFnName)
+)
+
+
+def get_gamma_composed_fn(
+    gamma_composed_fn_name: GammaComposedFnName,
+    gamma_expansion_fn_name: GammaExpansionFnName,
+    gamma_compression_fn_name: GammaCompressionFnName,
+) -> GammaFnTy:
+    gamma_expansion_fn = get_gamma_fn(gamma_expansion_fn_name)
+    gamma_compression_fn = get_gamma_fn(gamma_compression_fn_name)
+    match gamma_composed_fn_name:
+        case "expansion_then_compression":
+            return lambda x: gamma_compression_fn(gamma_expansion_fn(x))
+        case "compression_then_expansion":
+            return lambda x: gamma_expansion_fn(gamma_compression_fn(x))
+
+
+@parametrize_device_name_float_dtype_name
+@parametrize_tensor_invariant_fn_name
+@parametrize_gamma_fn_name
+def test_gamma_fn_tensor_invariant(
+    device_name: DeviceName,
+    float_dtype_name: FloatDtypeName,
+    tensor_invariant_fn_name: TensorInvariantFnName,
+    gamma_fn_name: GammaFnName,
+) -> None:
     """
-    Tests that gamma_expansion is invariant with respect to shape.
+    Tests that gamma_fn maintains an invariant.
 
     Args:
-        image: A 3HW tensor of floating dtype
+        device_name: The name of the device to run the test on
+        float_dtype_name: The name of the floating dtype to use
+        tensor_invariant_fn_name: The name of the invariant to test
+        gamma_fn_name: The name of the gamma function to test
     """
-    expected = image.shape
-    actual = gamma_expansion(image).shape
-    assert actual == expected
+    device: torch.device = get_device(device_name)
+    dtype: torch.dtype = get_float_dtype(float_dtype_name)
+    invariant_fn = get_tensor_invariant_fn(tensor_invariant_fn_name)
+    gamma_fn = get_gamma_fn(gamma_fn_name)
+    search_strategy = sized_3hw_tensors(device=device, dtype=dtype)
+
+    @given(image=search_strategy)
+    def test(image: Tensor) -> None:
+        actual = gamma_fn(image)
+        invariant_holds = invariant_fn(image, actual)
+        assert invariant_holds
+
+    test()
 
 
-@given(image=sized_3hw_tensors())
-def test_gamma_compression_shape_invariance(image: Tensor) -> None:
-    """
-    Tests that gamma_compression is invariant with respect to shape.
-
-    Args:
-        image: A 3HW tensor of floating dtype
-    """
-    expected = image.shape
-    actual = gamma_compression(image).shape
-    assert actual == expected
-
-
-@given(image=sized_3hw_tensors())
-def test_gamma_expansion_dtype_invariance(image: Tensor) -> None:
-    """
-    Tests that gamma_expansion is invariant with respect to dtype.
-
-    Args:
-        image: A 3HW tensor of floating dtype
-    """
-    expected = image.dtype
-    actual = gamma_expansion(image).dtype
-    assert actual == expected
-
-
-@given(image=sized_3hw_tensors())
-def test_gamma_compression_dtype_invariance(image: Tensor) -> None:
-    """
-    Tests that gamma_compression is invariant with respect to dtype.
-
-    Args:
-        image: A 3HW tensor of floating dtype
-    """
-    expected = image.dtype
-    actual = gamma_compression(image).dtype
-    assert actual == expected
-
-
-@given(image=sized_3hw_tensors())
-def test_gamma_expansion_device_invariance(image: Tensor) -> None:
-    """
-    Tests that gamma_expansion is invariant with respect to device.
-
-    Args:
-        image: A 3HW tensor of floating dtype
-    """
-    expected = image.device
-    actual = gamma_expansion(image).device
-    assert actual == expected
-
-
-@given(image=sized_3hw_tensors())
-def test_gamma_compression_device_invariance(image: Tensor) -> None:
-    """
-    Tests that gamma_compression is invariant with respect to device.
-
-    Args:
-        image: A 3HW tensor of floating dtype
-    """
-    expected = image.device
-    actual = gamma_compression(image).device
-    assert actual == expected
-
-
-@given(image=sized_3hw_tensors())
-def test_gamma_expansion_is_inverse_of_gamma_compression(image: Tensor) -> None:
+@parametrize_device_name_float_dtype_name
+@parametrize_gamma_composed_fn_name
+@parametrize_gamma_expansion_fn_name
+@parametrize_gamma_compression_fn_name
+def test_gamma_fn_inverse(
+    device_name: DeviceName,
+    float_dtype_name: FloatDtypeName,
+    gamma_composed_fn_name: GammaComposedFnName,
+    gamma_expansion_fn_name: GammaExpansionFnName,
+    gamma_compression_fn_name: GammaCompressionFnName,
+) -> None:
     """
     Tests that gamma_expansion is the inverse of gamma_compression (roughly).
 
     Args:
-        image: A 3HW tensor of floating dtype
+        device_name: The name of the device to run the test on
+        float_dtype_name: The name of the floating dtype to use
+        gamma_composed_fn_name: The name of the composed gamma function to test
+        gamma_expansion_fn_name: The name of the gamma expansion function to test
+        gamma_compression_fn_name: The name of the gamma compression function to test
     """
-    expected = image
-    actual = gamma_expansion(gamma_compression(image))
-    assert torch.allclose(expected, actual, rtol=1e-2, atol=1e-3)
+    device: torch.device = get_device(device_name)
+    dtype: torch.dtype = get_float_dtype(float_dtype_name)
+    gamma_composed_fn = get_gamma_composed_fn(
+        gamma_composed_fn_name, gamma_expansion_fn_name, gamma_compression_fn_name
+    )
 
+    search_strategy = sized_3hw_tensors(device=device, dtype=dtype)
 
-@given(image=sized_3hw_tensors())
-def test_gamma_compression_is_inverse_of_gamma_expansion(image: Tensor) -> None:
-    """
-    Tests that gamma_compression is the inverse of gamma_expansion (roughly).
+    @given(image=search_strategy)
+    def test(image: Tensor) -> None:
+        actual = gamma_composed_fn(image)
+        assert actual.allclose(image, rtol=1e-2, atol=1e-3)
 
-    Args:
-        image: A 3HW tensor of floating dtype
-    """
-    expected = image
-    actual = gamma_compression(gamma_expansion(image))
-    assert torch.allclose(expected, actual, rtol=1e-2, atol=1e-3)
+    test()

@@ -3,8 +3,8 @@ from functools import partial
 
 from torch import Tensor
 
-from mfsr_utils.pipelines.noises import Noises
-from mfsr_utils.pipelines.rgb_gains import RgbGains
+from mfsr_utils.pipelines.noise import Noise
+from mfsr_utils.pipelines.rgb_gain import RgbGain
 
 
 @dataclass
@@ -18,5 +18,5 @@ class MetaInfo:
     black_level: None | Tensor = None
     while_balance_applied: bool = False
     cam_wb: None | Tensor = None
-    gains: RgbGains = field(default_factory=partial(RgbGains, 0.0, 0.0, 0.0))
-    noises: Noises = field(default_factory=partial(Noises, 0.0, 0.0))
+    gain: RgbGain = field(default_factory=partial(RgbGain, 0.0, 0.0, 0.0))
+    noise: Noise = field(default_factory=partial(Noise, 0.0, 0.0))
