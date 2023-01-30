@@ -19,5 +19,8 @@ Thank you to the authors involved in the following work, from which this code is
 
 ## TODO
 
-- Move to DataPipes from the current Dataset implementation
-- Refactor to remove dependency on Pytorch Lightning
+- [ ] Move to DataPipes from the current Dataset implementation
+    - Tracked in [pipelines: Research `torchvision` offerings](https://github.com/ConnorBaker/mfsr_utils/issues/3)
+- [ ] Refactor to remove OpenCV usage from `single2lrburst`
+    - Tracked in [single2lrburst: Refactor to remove OpenCV usage](https://github.com/ConnorBaker/mfsr_utils/issues/10)
+- [x] Refactor to remove dependency on PyTorch Lightning
