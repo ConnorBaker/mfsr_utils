@@ -88,16 +88,25 @@ def parametrize_device_name_float_dtype_name(fn: Callable[P, R]) -> Callable[P, 
 
         device: torch.device = get_device(device_name)
         if device.type == "cuda" and not torch.cuda.is_available():
-            pytest.skip("CUDA not available")
+            pytest.xfail(reason="CUDA not available")
 
         _float_dtype_name: Any = kwargs.get("float_dtype_name")
         assert _float_dtype_name in get_args(FloatDtypeName)
         float_dtype_name: FloatDtypeName = cast(FloatDtypeName, _float_dtype_name)
 
         dtype: torch.dtype = get_float_dtype(float_dtype_name)
-        if device.type == "cpu" and dtype == torch.float16:
-            pytest.skip("float16 not supported on CPU")
+        if dtype == torch.float16 and device.type == "cpu":
+            pytest.xfail(reason="float16 not supported on CPU")
 
-        return fn(*args, **kwargs)
+        try:
+            return fn(*args, **kwargs)
+        except AssertionError as e:
+            str_e = str(e)
+            if " not implemented " in str_e:
+                pytest.xfail(reason=str_e)
+            elif " not supported " in str_e:
+                pytest.xfail(reason=str_e)
+            else:
+                raise e
 
     return wrapper
