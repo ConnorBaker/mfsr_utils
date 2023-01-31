@@ -357,11 +357,11 @@ class SyntheticBurstGeneratorTransform(torch.nn.Module):
     image_processing_params: ImageProcessingParams = field(
         default_factory=partial(
             ImageProcessingParams,
-            random_ccm=False,
-            random_gains=False,
-            smoothstep=False,
             compress_gamma=False,
-            add_noise=False,
+            random_ccm=False,
+            random_gain=False,
+            random_noise=False,
+            smoothstep=False,
         )
     )
     interpolation_type: InterpolationType = "bilinear"
