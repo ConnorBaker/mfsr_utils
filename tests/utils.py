@@ -43,9 +43,32 @@ def get_tensor_invariant_fn(
 
 
 DeviceName: TypeAlias = Literal["cpu", "cuda:0"]
-parametrize_device_name: MarkDecorator = pytest.mark.parametrize(
-    "device_name", get_args(DeviceName)
-)
+
+
+def parametrize_device_name(fn: Callable[P, R]) -> Callable[P, R]:
+    @pytest.mark.parametrize("device_name", get_args(DeviceName))
+    @wraps(fn)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        _device_name: Any = kwargs.get("device_name")
+        assert _device_name in get_args(DeviceName)
+        device_name: DeviceName = cast(DeviceName, _device_name)
+
+        device: torch.device = get_device(device_name)
+        if device.type == "cuda" and not torch.cuda.is_available():
+            pytest.xfail(reason="CUDA not available")
+
+        try:
+            return fn(*args, **kwargs)
+        except AssertionError as e:
+            str_e = str(e)
+            if " not implemented " in str_e:
+                pytest.xfail(reason=str_e)
+            elif " not supported " in str_e:
+                pytest.xfail(reason=str_e)
+            else:
+                raise e
+
+    return wrapper
 
 
 def get_device(device_name: DeviceName) -> torch.device:
@@ -87,8 +110,6 @@ def parametrize_device_name_float_dtype_name(fn: Callable[P, R]) -> Callable[P, 
         device_name: DeviceName = cast(DeviceName, _device_name)
 
         device: torch.device = get_device(device_name)
-        if device.type == "cuda" and not torch.cuda.is_available():
-            pytest.xfail(reason="CUDA not available")
 
         _float_dtype_name: Any = kwargs.get("float_dtype_name")
         assert _float_dtype_name in get_args(FloatDtypeName)
