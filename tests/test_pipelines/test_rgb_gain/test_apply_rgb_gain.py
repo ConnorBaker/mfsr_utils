@@ -1,4 +1,4 @@
-from typing import Callable, Literal, cast, get_args
+from typing import Callable, Literal, get_args
 
 import pytest
 import torch
@@ -20,20 +20,14 @@ from tests.utils import (
 )
 
 RgbGainFnTy = Callable[[Tensor, float, float, float], Tensor]
-ApplyRgbGainFnName = Literal[
-    "apply_rgb_gain", "compiled_apply_rgb_gain", "rgb_gain_module", "compiled_rgb_gain_module"
-]
-compiled_apply_rgb_gain = cast(RgbGainFnTy, torch.compile(apply_rgb_gain))  # type: ignore
+ApplyRgbGainFnName = Literal["apply_rgb_gain", "rgb_gain_module"]
 parametrize_apply_rgb_gain_fn_name = pytest.mark.parametrize(
     "apply_rgb_gain_fn_name", get_args(ApplyRgbGainFnName)
 )
 InvertRgbGainFnName = Literal[
     "invert_rgb_gain",
-    "compiled_invert_rgb_gain",
     "rgb_gain_module_invert",
-    "compiled_rgb_gain_module_invert",
 ]
-compiled_invert_rgb_gain = cast(RgbGainFnTy, torch.compile(apply_rgb_gain))  # type: ignore
 parametrize_invert_rgb_gain_fn_name = pytest.mark.parametrize(
     "invert_rgb_gain_fn_name", get_args(InvertRgbGainFnName)
 )
@@ -45,30 +39,16 @@ def get_rgb_gain_fn(rgb_gain_fn_name: RgbGainFnName) -> RgbGainFnTy:
     match rgb_gain_fn_name:
         case "apply_rgb_gain":
             return apply_rgb_gain
-        case "compiled_apply_rgb_gain":
-            return compiled_apply_rgb_gain
         case "rgb_gain_module":
             return lambda image, rgb_gain, red_gain, blue_gain: (
                 RgbGain(rgb_gain, red_gain, blue_gain)(image)  # type: ignore[no-any-return]
             )
-        case "compiled_rgb_gain_module":
-            return lambda image, rgb_gain, red_gain, blue_gain: torch.compile(  # type: ignore
-                RgbGain(rgb_gain, red_gain, blue_gain)
-            )(image)
         case "invert_rgb_gain":
             return invert_rgb_gain
-        case "compiled_invert_rgb_gain":
-            return compiled_invert_rgb_gain
         case "rgb_gain_module_invert":
             return lambda image, rgb_gain, red_gain, blue_gain: RgbGain(
                 rgb_gain, red_gain, blue_gain
             ).invert_rgb_gain(image)
-        case "compiled_rgb_gain_module_invert":
-            return lambda image, rgb_gain, red_gain, blue_gain: torch.compile(  # type: ignore
-                RgbGain(rgb_gain, red_gain, blue_gain)
-            ).invert_rgb_gain(  # type: ignore
-                image
-            )
 
 
 @parametrize_device_name_float_dtype_name

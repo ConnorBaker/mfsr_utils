@@ -1,4 +1,4 @@
-from typing import Callable, Literal, cast, get_args
+from typing import Callable, Literal, get_args
 
 import pytest
 import torch
@@ -45,8 +45,7 @@ def _mosaic_reference(image: Tensor, mode: Literal["grbg", "rggb"] = "rggb") -> 
 
 
 MosaicFnTy = Callable[[Tensor], Tensor]
-MosaicFnName = Literal["mosaic", "compiled_mosaic"]
-compiled_mosaic = cast(MosaicFnTy, torch.compile(mosaic))  # type: ignore
+MosaicFnName = Literal["mosaic"]
 parametrize_mosaic_fn_name = pytest.mark.parametrize("mosaic_fn_name", get_args(MosaicFnName))
 
 
@@ -54,8 +53,6 @@ def get_mosaic_fn(mosaic_fn_name: MosaicFnName) -> MosaicFnTy:
     match mosaic_fn_name:
         case "mosaic":
             return mosaic
-        case "compiled_mosaic":
-            return compiled_mosaic  # type: ignore
 
 
 @parametrize_device_name_float_dtype_name

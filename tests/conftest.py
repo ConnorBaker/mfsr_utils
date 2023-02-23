@@ -1,7 +1,5 @@
-import torch._dynamo.config
 from hypothesis import HealthCheck, settings
 
-torch._dynamo.config.cache_size_limit = 1024
 
 settings.register_profile(
     "dev",

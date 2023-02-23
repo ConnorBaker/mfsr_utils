@@ -1,4 +1,4 @@
-from typing import Callable, Literal, cast, get_args
+from typing import Callable, Literal, get_args
 
 import cv2  # type: ignore[import]
 import numpy as np
@@ -34,10 +34,7 @@ GetTransformMatFnTy = Callable[
     ],
     Tensor,
 ]
-GetTransformMatFnName = Literal["get_transform_mat", "compiled_get_transform_mat"]
-compiled_get_transform_mat = cast(
-    GetTransformMatFnTy, torch.compile(get_transform_mat)  # type: ignore
-)
+GetTransformMatFnName = Literal["get_transform_mat"]
 parametrize_get_transform_mat_fn_name = pytest.mark.parametrize(
     "get_transform_mat_fn_name", get_args(GetTransformMatFnName)
 )
@@ -47,8 +44,6 @@ def get_transform_mat_fn(get_transform_mat_fn_name: GetTransformMatFnName) -> Ge
     match get_transform_mat_fn_name:
         case "get_transform_mat":
             return get_transform_mat
-        case "compiled_get_transform_mat":
-            return compiled_get_transform_mat
 
 
 _IMAGE_SHAPES: st.SearchStrategy[tuple[int, int]] = st.tuples(

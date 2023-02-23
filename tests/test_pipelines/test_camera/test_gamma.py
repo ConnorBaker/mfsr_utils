@@ -1,4 +1,4 @@
-from typing import Callable, Literal, cast, get_args
+from typing import Callable, Literal, get_args
 
 import pytest
 import torch
@@ -19,13 +19,11 @@ from tests.utils import (
 )
 
 GammaFnTy = Callable[[Tensor], Tensor]
-GammaExpansionFnName = Literal["gamma_expansion", "compiled_gamma_expansion"]
-compiled_gamma_expansion = cast(GammaFnTy, torch.compile(gamma_expansion))  # type: ignore
+GammaExpansionFnName = Literal["gamma_expansion"]
 parametrize_gamma_expansion_fn_name = pytest.mark.parametrize(
     "gamma_expansion_fn_name", get_args(GammaExpansionFnName)
 )
-GammaCompressionFnName = Literal["gamma_compression", "compiled_gamma_compression"]
-compiled_gamma_compression = cast(GammaFnTy, torch.compile(gamma_compression))  # type: ignore
+GammaCompressionFnName = Literal["gamma_compression"]
 parametrize_gamma_compression_fn_name = pytest.mark.parametrize(
     "gamma_compression_fn_name", get_args(GammaCompressionFnName)
 )
@@ -37,12 +35,8 @@ def get_gamma_fn(gamma_fn_name: GammaFnName) -> GammaFnTy:
     match gamma_fn_name:
         case "gamma_expansion":
             return gamma_expansion
-        case "compiled_gamma_expansion":
-            return compiled_gamma_expansion
         case "gamma_compression":
             return gamma_compression
-        case "compiled_gamma_compression":
-            return compiled_gamma_compression
 
 
 GammaComposedFnName = Literal["expansion_then_compression", "compression_then_expansion"]

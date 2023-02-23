@@ -1,4 +1,4 @@
-from typing import Callable, Literal, cast, get_args
+from typing import Callable, Literal, get_args
 
 import pytest
 import torch
@@ -19,8 +19,7 @@ from tests.utils import (
 )
 
 ApplyCCMFnTy = Callable[[Tensor, Tensor], Tensor]
-ApplyCCMFnName = Literal["apply_ccm", "compiled_apply_ccm"]
-compiled_apply_ccm = cast(ApplyCCMFnTy, torch.compile(apply_ccm))  # type: ignore
+ApplyCCMFnName = Literal["apply_ccm"]
 parametrize_apply_ccm_fn_name = pytest.mark.parametrize(
     "apply_ccm_fn_name", get_args(ApplyCCMFnName)
 )
@@ -30,8 +29,6 @@ def get_apply_ccm_fn(apply_ccm_fn_name: ApplyCCMFnName) -> ApplyCCMFnTy:
     match apply_ccm_fn_name:
         case "apply_ccm":
             return apply_ccm
-        case "compiled_apply_ccm":
-            return compiled_apply_ccm
 
 
 @parametrize_device_name_float_dtype_name

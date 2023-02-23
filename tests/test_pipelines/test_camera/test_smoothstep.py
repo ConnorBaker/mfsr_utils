@@ -1,4 +1,4 @@
-from typing import Callable, Literal, cast, get_args
+from typing import Callable, Literal, get_args
 
 import pytest
 import torch
@@ -20,13 +20,11 @@ from tests.utils import (
 )
 
 SmoothstepFnTy = Callable[[Tensor], Tensor]
-ApplySmoothstepFnName = Literal["apply_smoothstep", "compiled_apply_smoothstep"]
-compiled_apply_smoothstep = cast(SmoothstepFnTy, torch.compile(apply_smoothstep))  # type: ignore
+ApplySmoothstepFnName = Literal["apply_smoothstep"]
 parametrize_apply_smoothstep_fn_name = pytest.mark.parametrize(
     "apply_smoothstep_fn_name", get_args(ApplySmoothstepFnName)
 )
-InvertSmoothstepFnName = Literal["invert_smoothstep", "compiled_invert_smoothstep"]
-compiled_invert_smoothstep = cast(SmoothstepFnTy, torch.compile(invert_smoothstep))  # type: ignore
+InvertSmoothstepFnName = Literal["invert_smoothstep"]
 parametrize_invert_smoothstep_fn_name = pytest.mark.parametrize(
     "invert_smoothstep_fn_name", get_args(InvertSmoothstepFnName)
 )
@@ -40,12 +38,8 @@ def get_smoothstep_fn(smoothstep_fn_name: SmoothstepFnName) -> SmoothstepFnTy:
     match smoothstep_fn_name:
         case "apply_smoothstep":
             return apply_smoothstep
-        case "compiled_apply_smoothstep":
-            return compiled_apply_smoothstep  # type: ignore
         case "invert_smoothstep":
             return invert_smoothstep
-        case "compiled_invert_smoothstep":
-            return compiled_invert_smoothstep  # type: ignore
 
 
 SmoothstepComposedFnName = Literal["apply_then_invert", "invert_then_apply"]

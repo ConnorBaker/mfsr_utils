@@ -1,32 +1,30 @@
-{ pkgs
-, stdenv
-, lib
-, autoPatchelfHook
-, python
-, fetchFromGitHub
-, buildPythonPackage
-, # Propagated build inputs
+{
+  pkgs,
+  stdenv,
+  lib,
+  autoPatchelfHook,
+  python,
+  fetchFromGitHub,
+  buildPythonPackage,
+  # Propagated build inputs
   # main deps
-  torch
-, torchvision
-, filelock
-, opencv
-, # lint
-  black
-, flake8
-, isort
-, # typecheck
-  pyright
-, mypy
-, # test
-  pytest
-, pytest-xdist
-, hypothesis
-, hypothesis_torch_utils
-,
+  torch,
+  torchvision,
+  filelock,
+  opencv4,
+  # lint
+  black,
+  flake8,
+  isort,
+  # typecheck
+  pyright,
+  mypy,
+  # test
+  pytest,
+  pytest-xdist,
+  hypothesis,
+  hypothesis_torch_utils,
 }:
-
-
 buildPythonPackage {
   pname = "mfsr_utils";
   version = "1.7";
@@ -35,15 +33,15 @@ buildPythonPackage {
   src = fetchFromGitHub {
     owner = "ConnorBaker";
     repo = "mfsr_utils";
-    rev = "1bb6ea5f66172112ff4e98a320888aaf753ea745";
-    hash = "";
+    rev = "b99224431d551d0dd41f51faa7f795598ddc5013";
+    hash = "sha256-YUpJ7Hy37UjTBEIu+cTrJNc+22c1PrtPms/TRKqfAq4=";
   };
 
   propagatedBuildInputs = [
     torch
     torchvision
     filelock
-    opencv
+    opencv4
   ];
 
   # NOTE: We cannot use pythonImportsCheck for this module because it requires CUDA to be
@@ -56,7 +54,7 @@ buildPythonPackage {
       flake8
       isort
     ];
-    typecheck = [ pyright mypy ];
+    typecheck = [pyright mypy];
     test = [
       pytest
       pytest-xdist
@@ -65,5 +63,5 @@ buildPythonPackage {
     ];
   };
 
-  pythonImportsCheck = [ "mfsr_utils" ];
+  pythonImportsCheck = ["mfsr_utils"];
 }

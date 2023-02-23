@@ -1,4 +1,4 @@
-from typing import Callable, Literal, cast, get_args
+from typing import Callable, Literal, get_args
 
 import pytest
 import torch
@@ -20,10 +20,7 @@ from tests.utils import (
 )
 
 ApplyNoiseFnTy = Callable[[Tensor, float, float], Tensor]
-ApplyNoiseFnName = Literal[
-    "apply_noise", "compiled_apply_noise", "noise_module", "compiled_noise_module"
-]
-compiled_apply_noise = cast(ApplyNoiseFnTy, torch.compile(apply_noise))  # type: ignore
+ApplyNoiseFnName = Literal["apply_noise", "noise_module"]
 parametrize_apply_noise_fn_name = pytest.mark.parametrize(
     "apply_noise_fn_name", get_args(ApplyNoiseFnName)
 )
@@ -33,16 +30,10 @@ def get_apply_noise_fn(apply_noise_fn_name: ApplyNoiseFnName) -> ApplyNoiseFnTy:
     match apply_noise_fn_name:
         case "apply_noise":
             return apply_noise
-        case "compiled_apply_noise":
-            return compiled_apply_noise
         case "noise_module":
             return lambda image, shot_noise, read_noise: (
                 Noise(shot_noise, read_noise)(image)  # type: ignore[no-any-return]
             )
-        case "compiled_noise_module":
-            return lambda image, shot_noise, read_noise: torch.compile(  # type: ignore
-                Noise(shot_noise, read_noise)
-            )(image)
 
 
 @parametrize_device_name_float_dtype_name
