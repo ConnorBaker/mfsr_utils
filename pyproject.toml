@@ -17,8 +17,7 @@ dependencies = [
     "torch>=1.8",
     "torchvision>=0.9",
     "filelock>=3.9",
-    # "torchvision @ git+https://github.com/pytorch/vision.git@1353df9e45aae6739c23db4a053c3d9a9fd17b3d",
-    "opencv-python-headless>=4.7",
+    "opencv>=4.7",
 ]
 
 [project.optional-dependencies]
