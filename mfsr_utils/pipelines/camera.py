@@ -171,8 +171,8 @@ def mosaic(images: Tensor) -> Tensor:
     green_red = images[:, 1, 0::2, 1::2]
     green_blue = images[:, 1, 1::2, 0::2]
     blue = images[:, 2, 1::2, 1::2]
-    images = torch.stack((red, green_red, green_blue, blue), dim=1)
-    return images
+    mosaiced = torch.stack((red, green_red, green_blue, blue), dim=1)
+    return mosaiced
 
 
 def demosaic(image: Tensor) -> Tensor:

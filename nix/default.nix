@@ -27,15 +27,10 @@
 }:
 buildPythonPackage {
   pname = "mfsr_utils";
-  version = "1.7";
+  version = "0.1.0";
   format = "pyproject";
 
-  src = fetchFromGitHub {
-    owner = "ConnorBaker";
-    repo = "mfsr_utils";
-    rev = "b99224431d551d0dd41f51faa7f795598ddc5013";
-    hash = "sha256-YUpJ7Hy37UjTBEIu+cTrJNc+22c1PrtPms/TRKqfAq4=";
-  };
+  src = ../.;
 
   propagatedBuildInputs = [
     torch
@@ -44,8 +39,6 @@ buildPythonPackage {
     opencv4
   ];
 
-  # NOTE: We cannot use pythonImportsCheck for this module because it requires CUDA to be
-  #   available at the time of import.
   doCheck = false;
 
   passthru.optional-dependencies = {
