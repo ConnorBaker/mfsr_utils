@@ -38,11 +38,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1678602866,
-        "narHash": "sha256-EU2Mm9Y0mpQRwDcJbn+WLFoJVqa2QwSsvCi9obUeXks=",
+        "lastModified": 1678659911,
+        "narHash": "sha256-A2KF1FFkOoI9cD3j+ohKbKrBWZEK0CS0JAfoz+mFHYM=",
         "owner": "ConnorBaker",
         "repo": "hypothesis_torch_utils",
-        "rev": "45e7cfb36818c4150eba4cbb4f53813307c481f1",
+        "rev": "cbae4c887a1f82fe2f312cf74de581dc79b0f211",
         "type": "github"
       },
       "original": {

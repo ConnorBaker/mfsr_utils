@@ -58,8 +58,8 @@
       ];
     };
 
-    inherit (pkgs) python3 python3Packages nixgl;
-    inherit (python3Packages) mfsr_utils jupyter;
+    inherit (pkgs) python3 python3Packages libraw nixgl;
+    inherit (python3Packages) mfsr_utils jupyter ipykernel rawpy;
     inherit (nixgl.nvidiaPackages nvidiaDriver) nixGLNvidia;
   in {
     overlays.default = overlay;
@@ -67,7 +67,9 @@
       packages =
         [
           python3
+          rawpy
           jupyter
+          ipykernel
           mfsr_utils.propagatedBuildInputs
           nixGLNvidia
         ]
@@ -80,6 +82,7 @@
       shellHook = ''
         alias python3="${nixGLNvidia.name} python3"
         alias python="${nixGLNvidia.name} python3"
+        alias jupyter="${nixGLNvidia.name} jupyter"
       '';
     };
     formatter.${system} = pkgs.alejandra;
