@@ -17,7 +17,6 @@ dependencies = [
     "torch>=1.8",
     "torchvision>=0.9",
     "filelock>=3.9",
-    "opencv>=4.7",
 ]
 
 [project.optional-dependencies]
@@ -27,7 +26,7 @@ test = [
     "pytest>=7.2.0",
     "pytest-xdist>=3.1.0",
     "hypothesis>=6.61.0",
-    "hypothesis_torch_utils @ git+https://github.com/ConnorBaker/hypothesis_torch_utils.git@6a148268ee3f384c67f2f3cd15333e2b836c715b",
+    "hypothesis_torch_utils",
 ]
 
 [tool.setuptools]

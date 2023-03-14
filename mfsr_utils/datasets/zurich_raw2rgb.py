@@ -15,7 +15,7 @@ _T = TypeVar("_T")
 class ZurichRaw2Rgb(Dataset[_T], Downloadable):
     """Canon RGB images from the "Zurich RAW to RGB mapping" dataset. You can download the full
     dataset (22 GB) from http://people.ee.ethz.ch/~ihnatova/pynet.html#dataset. Alternatively, you
-    can only download the Canon RGB images (5.5 GB) from
+    can download only the Canon RGB images (5.5 GB) from
     https://data.vision.ee.ethz.ch/bhatg/zurich-raw-to-rgb.zip
     """
 

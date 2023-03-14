@@ -2,7 +2,7 @@ import math
 import random
 from dataclasses import dataclass, field
 from functools import partial
-from typing import TypedDict
+from typing import Type, TypedDict
 
 import torch
 from torch import Tensor, nn
@@ -12,6 +12,7 @@ from torchvision.transforms import (  # type: ignore[import]
     RandomCrop,
 )
 from torchvision.transforms import functional as TF  # type: ignore[import]
+from typing_extensions import Self
 
 # TODO: Refactor to use the new mosaic implementation
 from mfsr_utils.pipelines import camera
@@ -20,6 +21,147 @@ from mfsr_utils.pipelines.image_transform_params import ImageTransformParams
 from mfsr_utils.pipelines.meta_info import MetaInfo
 
 # TODO: Find a clean way to know which device to allocate the tensors on.
+
+
+def patches_from_image(image: Tensor, PH: int, PW: int) -> Tensor:
+    """
+    Takes an image and returns a tensor of patches.
+
+    Args:
+        image (Tensor): A tensor of at least three dimensions with the last two being the height
+            and width of the image.
+        PH (int): The height of the patches.
+        PW (int): The width of the patches.
+
+    Returns:
+        A tensor of shape (*image.shape[:-2], NHP, NWP, PH, PW), where NHP is the number of
+        patches in the height dimension, and NWP is the number of patches in the width dimension.
+    """
+    # Number of dimensions
+    _ND: int = image.dim()
+    assert _ND >= 3, (
+        f"Image should have at least 3 dimensions, but has {_ND}; consider using torch.unsqueeze"
+        " to add a batch dimension."
+    )
+    # Height
+    _H: int = image.shape[-2]
+    # Width
+    _W: int = image.shape[-1]
+    # Patch Height, Patch Width
+    patches = (
+        image
+        # Unfolds along the height dimension, adding a dimension at the end
+        .unfold(-2, PH, PH)
+        # Because we have a new dimension at the end, -2 now refers to the width dimension
+        .unfold(-2, PW, PW)
+    )
+    # Number of patches in the height dimension
+    _NHP: int = patches.shape[-4]
+    # Number of patches in the width dimension
+    _NWP: int = patches.shape[-3]
+    # Patch Height
+    _PH: int = patches.shape[-2]
+    # Patch Width
+    _PW: int = patches.shape[-1]
+
+    assert (
+        _H // PH == _NHP
+    ), f"Number of patches in the height dimension should be {_H // PH}, but is {_NHP}"
+    assert (
+        _W // PW == _NWP
+    ), f"Number of patches in the width dimension should be {_W // PW}, but is {_NWP}"
+    assert PH == _PH, f"Patch height should be {PH}, but is {_PH}"
+    assert PW == _PW, f"Patch width should be {PW}, but is {_PW}"
+    return patches
+
+
+def image_from_patches(patches: Tensor) -> Tensor:
+    """
+    Takes a tensor of patches and returns an image.
+
+    Args:
+        patches (Tensor): A tensor of at least five dimensions with the last four being (NHP, NWP,
+            PH, PW), where NHP is the number of patches in the height dimension, and NWP is the
+            number of patches in the width dimension.
+
+    Returns:
+        A tensor of shape (*patches.shape[:-4], H, W), where H is the height of the image (given
+        by NHP * PH), and W is the width of the image (given by NWP * PW).
+    """
+    # Number of dimensions
+    _ND: int = patches.dim()
+    assert _ND >= 5, (
+        f"Image should have at least 5 dimensions, but has {_ND}; consider using torch.unsqueeze"
+        " to add a batch dimension."
+    )
+    # Number of patches in the height dimension
+    _NHP: int = patches.shape[-4]
+    # Number of patches in the width dimension
+    _NWP: int = patches.shape[-3]
+    # Patch Height
+    _PH: int = patches.shape[-2]
+    # Patch Width
+    _PW: int = patches.shape[-1]
+    # Height
+    _H: int = _NHP * _PH
+    # Width
+    _W: int = _NWP * _PW
+
+    return (
+        patches
+        # We need to permute the dimensions so NHP is next to PH, and NWP is next to PW
+        # (..., NHP, NWP, PH, PW) -> (..., NHP, PH, NWP, PW)
+        .permute(*range(_ND - 4), _ND - 4, _ND - 2, _ND - 3, _ND - 1).reshape(
+            *patches.shape[:-4], _H, _W
+        )
+    )
+
+
+@dataclass
+class PatchesInfo:
+    """
+    A class to hold the information about tensors of patches extracted from an image. Doesn't hold
+    information about the channels or the patches themselves.
+
+    Attributes:
+        PH (int): The height of the patches.
+        PW (int): The width of the patches.
+        NHP (int): The number of patches in the height dimension.
+        NWP (int): The number of patches in the width dimension.
+        H (int): The height of the image (given by NHP * PH).
+        W (int): The width of the image (given by NWP * PW).
+    """
+
+    PH: int
+    PW: int
+    NHP: int
+    NWP: int
+    H: int = field(init=False)
+    W: int = field(init=False)
+
+    def __post_init__(self: Self) -> None:
+        self.H = self.NHP * self.PH  # type: ignore[assignment]
+        self.W = self.NWP * self.PW  # type: ignore[assignment]
+
+    @classmethod
+    def of(cls: Type[Self], image: Tensor) -> Self:
+        """
+        Creates a PatchesInfo object from an image tensor.
+
+        Args:
+            image (Tensor): A tensor where the last four dimensions are (NHP, NWP, PH, PW), where
+                NHP is the number of patches in the height dimension, NWP is the number of patches
+                in the width dimension, PH is the patch height, and PW is the patch width.
+
+        Returns:
+            A PatchesInfo object.
+        """
+        NHP = image.shape[-4]
+        NWP = image.shape[-3]
+        PH = image.shape[-2]
+        PW = image.shape[-1]
+
+        return cls(PH, PW, NHP, NWP)
 
 
 def rgb2rawburst(

@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import cv2 as cv  # type: ignore[import]
-import numpy as np
-import numpy.typing as npt
 import torch
 import torch.jit
 from torch import Tensor
@@ -157,6 +154,26 @@ def apply_ccm(image: Tensor, ccm: Tensor) -> Tensor:
     return clamped
 
 
+def mosaic_rgbg(image: Tensor) -> Tensor:
+    """
+    Converts a single-channel raw image to a mosaic tensor.
+
+    Only supports the "RGBG" color description.
+
+    Args:
+        image (Tensor): A single-channel raw image of shape (H, W).
+
+    Returns:
+        A tensor of shape (4, H//2, W//2) where H and W are the height and width of image.
+    """
+    red = image[0::2, 0::2]
+    green_red = image[0::2, 1::2]
+    blue = image[1::2, 0::2]
+    green_blue = image[1::2, 1::2]
+    mosaiced = torch.stack((red, green_red, blue, green_blue), dim=0)
+    return mosaiced
+
+
 def mosaic(images: Tensor) -> Tensor:
     """Extracts RGGB Bayer planes from a stack of RGB images of shape (N, 3, H, W) and returns a
     3D tensor of shape (N, 4, H // 2, W // 2).
@@ -173,47 +190,3 @@ def mosaic(images: Tensor) -> Tensor:
     blue = images[:, 2, 1::2, 1::2]
     mosaiced = torch.stack((red, green_red, green_blue, blue), dim=1)
     return mosaiced
-
-
-def demosaic(image: Tensor) -> Tensor:
-    assert isinstance(image, torch.Tensor)
-    image_normed = (image.clamp(0.0, 1.0) * 255).type(torch.uint8)
-
-    if image_normed.dim() == 4:
-        num_images = image_normed.shape[0]
-        batch_input = True
-    else:
-        num_images = 1
-        batch_input = False
-        image_normed = image_normed.unsqueeze(0)
-
-    # Generate single channel input for opencv
-    im_sc = torch.zeros(
-        (num_images, image_normed.shape[-2] * 2, image_normed.shape[-1] * 2, 1),
-        device=image_normed.device,
-        dtype=torch.uint8,
-    )
-
-    im_sc[:, 0::2, 0::2, 0] = image_normed[:, 0, :, :]
-    im_sc[:, 0::2, 1::2, 0] = image_normed[:, 1, :, :]
-    im_sc[:, 1::2, 0::2, 0] = image_normed[:, 2, :, :]
-    im_sc[:, 1::2, 1::2, 0] = image_normed[:, 3, :, :]
-
-    # We cannot convert a tensor on the GPU to a numpy array, so we need to move it to the CPU
-    # first.
-    im_sc_np: npt.NDArray[np.uint8] = im_sc.to(device="cpu", dtype=torch.uint8).numpy()
-
-    out: list[Tensor] = [
-        (
-            torch.from_numpy(cv.cvtColor(im, cv.COLOR_BAYER_BG2RGB)).permute(  # type: ignore
-                2, 0, 1
-            )
-            / 255.0
-        )
-        for im in im_sc_np
-    ]
-
-    if batch_input:
-        return torch.stack(out, dim=0).to(image.device).type(image.dtype)
-    else:
-        return out[0].to(image.device).type(image.dtype)

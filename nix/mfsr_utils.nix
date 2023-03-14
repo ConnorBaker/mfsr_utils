@@ -1,8 +1,6 @@
 {
   buildPythonPackage,
   lib,
-  # buildInputs
-  opencv4,
   # propagatedBuildInputs
   filelock,
   torch,
@@ -26,10 +24,6 @@ buildPythonPackage {
   format = "pyproject";
 
   src = ../.;
-
-  buildInputs = [
-    opencv4
-  ];
 
   propagatedBuildInputs = [
     filelock
