@@ -12,9 +12,7 @@ settings.register_profile(
     max_examples=64,
     suppress_health_check=[HealthCheck.filter_too_much],
 )
-settings.register_profile(
-    "ci", deadline=None, max_examples=256, suppress_health_check=[HealthCheck.filter_too_much]
-)
+settings.register_profile("ci", deadline=None, max_examples=256, suppress_health_check=[HealthCheck.filter_too_much])
 settings.register_profile(
     "ci_slow",
     deadline=None,

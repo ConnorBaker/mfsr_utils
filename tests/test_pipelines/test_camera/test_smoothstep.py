@@ -29,9 +29,7 @@ parametrize_invert_smoothstep_fn_name = pytest.mark.parametrize(
     "invert_smoothstep_fn_name", get_args(InvertSmoothstepFnName)
 )
 SmoothstepFnName = Literal[ApplySmoothstepFnName, InvertSmoothstepFnName]
-parametrize_smoothstep_fn_name = pytest.mark.parametrize(
-    "smoothstep_fn_name", get_args(SmoothstepFnName)
-)
+parametrize_smoothstep_fn_name = pytest.mark.parametrize("smoothstep_fn_name", get_args(SmoothstepFnName))
 
 
 def get_smoothstep_fn(smoothstep_fn_name: SmoothstepFnName) -> SmoothstepFnTy:

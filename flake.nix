@@ -1,90 +1,109 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/refs/pull/218044/head";
-    nixGL = {
-      url = "github:guibou/nixGL";
-      inputs.nixpkgs.follows = "nixpkgs";
+    flake-parts = {
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+      url = "github:hercules-ci/flake-parts";
     };
+    flake-utils.url = "github:numtide/flake-utils";
     hypothesis_torch_utils = {
       url = "github:ConnorBaker/hypothesis_torch_utils";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs-lib.url = "github:nix-community/nixpkgs.lib";
+    pre-commit-hooks-nix = {
+      inputs = {
+        flake-utils.follows = "flake-utils";
+        nixpkgs-stable.follows = "nixpkgs";
+        nixpkgs.follows = "nixpkgs";
+      };
+      url = "github:cachix/pre-commit-hooks.nix";
+    };
+    treefmt-nix = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:numtide/treefmt-nix";
+    };
   };
 
   nixConfig = {
-    # Add the CUDA maintainer's cache
     extra-substituters = [
-      "https://nix-community.cachix.org"
+      "https://cuda-maintainers.cachix.org"
+    ];
+    extra-trusted-substituters = [
       "https://cuda-maintainers.cachix.org"
     ];
     extra-trusted-public-keys = [
-      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
     ];
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    nixGL,
-    hypothesis_torch_utils,
-  }: let
-    system = "x86_64-linux";
-    nvidiaDriver = {
-      version = "530.30.02";
-      sha256 = "sha256-R/3bvXoiumYZI9vObn9R7sVN9oBQxAbMBJDDv77eeWM=";
-    };
-
-    overlay = nixpkgs.lib.composeManyExtensions [
-      hypothesis_torch_utils.overlays.default
-      (import ./nix/extensions/mfsr_utils.nix)
-    ];
-    pkgs = import nixpkgs {
-      inherit system;
-      config = {
-        allowUnfree = true;
-        cudaSupport = true;
-        cudaCapabilities = ["8.6"];
-        cudaForwardCompat = true;
-      };
-      overlays = [
-        (final: prev: {
-          python3 = prev.python310;
-          python3Packages = prev.python310Packages;
-          cudaPackages = prev.cudaPackages_11_8;
-        })
-        overlay
-        nixGL.overlays.default
+  outputs = inputs:
+    inputs.flake-parts.lib.mkFlake {inherit inputs;} {
+      systems = ["x86_64-linux"];
+      imports = [
+        inputs.treefmt-nix.flakeModule
+        inputs.pre-commit-hooks-nix.flakeModule
+        ./nix
       ];
-    };
 
-    inherit (pkgs) python3 python3Packages libraw nixgl;
-    inherit (python3Packages) mfsr_utils jupyter ipykernel rawpy;
-    inherit (nixgl.nvidiaPackages nvidiaDriver) nixGLNvidia;
-  in {
-    overlays.default = overlay;
-    devShells.${system}.default = pkgs.mkShell {
-      packages =
-        [
-          python3
-          rawpy
-          jupyter
-          ipykernel
-          mfsr_utils.propagatedBuildInputs
-          nixGLNvidia
-        ]
-        ++ (
-          with mfsr_utils.passthru.optional-dependencies;
-            lint ++ typecheck ++ test
-        );
+      perSystem = {
+        config,
+        pkgs,
+        ...
+      }: {
+        pre-commit.settings = {
+          hooks = {
+            # Formatter checks
+            treefmt.enable = true;
 
-      # Make an alias for python so it's wrapped with nixGLNvidia.
-      shellHook = ''
-        alias python3="${nixGLNvidia.name} python3"
-        alias python="${nixGLNvidia.name} python3"
-        alias jupyter="${nixGLNvidia.name} jupyter"
-      '';
+            # Nix checks
+            deadnix.enable = true;
+            nil.enable = true;
+            statix.enable = true;
+
+            # Python checks
+            mypy.enable = true;
+            pyright.enable = true;
+            ruff.enable = true; # Ruff both lints and checks sorted imports
+          };
+          settings = let
+            # We need to provide wrapped version of mypy and pyright which can find our imports.
+            # TODO: The script we're sourcing is an implementation detail of `mkShell` and we should
+            # not depend on it exisitng. In fact, the first few lines of the file state as much
+            # (that's why we need to strip them, sourcing only the content of the script).
+            wrapper = name:
+              pkgs.writeShellScript name ''
+                source <(sed -n '/^declare/,$p' ${config.devShells.mfsr_utils})
+                ${name} "$@"
+              '';
+          in {
+            # Formatter
+            treefmt.package = config.treefmt.build.wrapper;
+
+            # Python
+            mypy.binPath = "${wrapper "mypy"}";
+            pyright.binPath = "${wrapper "pyright"}";
+          };
+        };
+
+        treefmt = {
+          projectRootFile = "flake.nix";
+          programs = {
+            # Markdown
+            mdformat.enable = true;
+
+            # Nix
+            alejandra.enable = true;
+
+            # Python
+            black.enable = true;
+            ruff.enable = true; # Ruff both lints and checks sorted imports
+
+            # Shell
+            shellcheck.enable = true;
+            shfmt.enable = true;
+          };
+        };
+      };
     };
-    formatter.${system} = pkgs.alejandra;
-  };
 }

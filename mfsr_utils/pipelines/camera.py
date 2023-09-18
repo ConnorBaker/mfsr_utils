@@ -11,9 +11,7 @@ shape (c, h, w). Additionally, some also support batch operations, i.e. inputs o
 """
 
 
-def random_ccm(
-    dtype: torch.dtype = torch.float32, device: torch.device = torch.device("cpu")
-) -> Tensor:
+def random_ccm(dtype: torch.dtype = torch.float32, device: torch.device = torch.device("cpu")) -> Tensor:
     """Generates random RGB -> Camera color correction matrices.
 
     Args:

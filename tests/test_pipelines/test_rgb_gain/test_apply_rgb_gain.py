@@ -21,16 +21,12 @@ from tests.utils import (
 
 RgbGainFnTy = Callable[[Tensor, float, float, float], Tensor]
 ApplyRgbGainFnName = Literal["apply_rgb_gain", "rgb_gain_module"]
-parametrize_apply_rgb_gain_fn_name = pytest.mark.parametrize(
-    "apply_rgb_gain_fn_name", get_args(ApplyRgbGainFnName)
-)
+parametrize_apply_rgb_gain_fn_name = pytest.mark.parametrize("apply_rgb_gain_fn_name", get_args(ApplyRgbGainFnName))
 InvertRgbGainFnName = Literal[
     "invert_rgb_gain",
     "rgb_gain_module_invert",
 ]
-parametrize_invert_rgb_gain_fn_name = pytest.mark.parametrize(
-    "invert_rgb_gain_fn_name", get_args(InvertRgbGainFnName)
-)
+parametrize_invert_rgb_gain_fn_name = pytest.mark.parametrize("invert_rgb_gain_fn_name", get_args(InvertRgbGainFnName))
 RgbGainFnName = Literal[ApplyRgbGainFnName, InvertRgbGainFnName]
 parametrize_rgb_gain_fn_name = pytest.mark.parametrize("rgb_gain_fn_name", get_args(RgbGainFnName))
 
@@ -46,9 +42,9 @@ def get_rgb_gain_fn(rgb_gain_fn_name: RgbGainFnName) -> RgbGainFnTy:
         case "invert_rgb_gain":
             return invert_rgb_gain
         case "rgb_gain_module_invert":
-            return lambda image, rgb_gain, red_gain, blue_gain: RgbGain(
-                rgb_gain, red_gain, blue_gain
-            ).invert_rgb_gain(image)
+            return lambda image, rgb_gain, red_gain, blue_gain: RgbGain(rgb_gain, red_gain, blue_gain).invert_rgb_gain(
+                image
+            )
 
 
 @parametrize_device_name_float_dtype_name

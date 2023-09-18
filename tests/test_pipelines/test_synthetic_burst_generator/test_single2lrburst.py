@@ -51,7 +51,6 @@ def test_single2lrburst_tensor_invariant(
         downsample_factor: float,
         transform_params: None | ImageTransformParams,
     ) -> None:
-
         try:
             actual = single2lrburst(
                 image,

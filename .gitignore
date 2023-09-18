@@ -128,6 +128,12 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Ruff
+.ruff_cache
+
+# Nix
+result
+
 # ML
 .vscode
 lightning_logs

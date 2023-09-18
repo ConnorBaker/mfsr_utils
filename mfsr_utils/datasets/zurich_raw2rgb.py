@@ -22,9 +22,7 @@ class ZurichRaw2Rgb(Dataset[_T], Downloadable):
     url: ClassVar[str] = "https://data.vision.ee.ethz.ch/bhatg/zurich-raw-to-rgb.zip"
     filename: ClassVar[str] = "zurich-raw-to-rgb.zip"
     dirname: ClassVar[str] = "zurich-raw-to-rgb"
-    mirrors: ClassVar[list[str]] = [
-        "https://storage.googleapis.com/bsrt-supplemental/zurich-raw-to-rgb.zip"
-    ]
+    mirrors: ClassVar[list[str]] = ["https://storage.googleapis.com/bsrt-supplemental/zurich-raw-to-rgb.zip"]
 
     data_dir: Path
     transform: Callable[[Tensor], _T] = nn.Identity()

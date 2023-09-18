@@ -10,9 +10,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 TensorInvariantFnTy: TypeAlias = Callable[[Tensor, Tensor], bool]
-TensorInvariantFnName: TypeAlias = Literal[
-    "TensorShapeInvariant", "TensorDtypeInvariant", "TensorDeviceInvariant"
-]
+TensorInvariantFnName: TypeAlias = Literal["TensorShapeInvariant", "TensorDtypeInvariant", "TensorDeviceInvariant"]
 parametrize_tensor_invariant_fn_name: MarkDecorator = pytest.mark.parametrize(
     "tensor_invariant_fn_name", get_args(TensorInvariantFnName)
 )
@@ -80,9 +78,7 @@ def get_device(device_name: DeviceName) -> torch.device:
 
 
 FloatDtypeName: TypeAlias = Literal["bfloat16", "float16", "float32", "float64"]
-parametrize_float_dtype_name: MarkDecorator = pytest.mark.parametrize(
-    "float_dtype_name", get_args(FloatDtypeName)
-)
+parametrize_float_dtype_name: MarkDecorator = pytest.mark.parametrize("float_dtype_name", get_args(FloatDtypeName))
 
 
 def get_float_dtype(dtype_name: FloatDtypeName) -> torch.dtype:

@@ -64,12 +64,8 @@ def patches_from_image(image: Tensor, PH: int, PW: int) -> Tensor:
     # Patch Width
     _PW: int = patches.shape[-1]
 
-    assert (
-        _H // PH == _NHP
-    ), f"Number of patches in the height dimension should be {_H // PH}, but is {_NHP}"
-    assert (
-        _W // PW == _NWP
-    ), f"Number of patches in the width dimension should be {_W // PW}, but is {_NWP}"
+    assert _H // PH == _NHP, f"Number of patches in the height dimension should be {_H // PH}, but is {_NHP}"
+    assert _W // PW == _NWP, f"Number of patches in the width dimension should be {_W // PW}, but is {_NWP}"
     assert PH == _PH, f"Patch height should be {PH}, but is {_PH}"
     assert PW == _PW, f"Patch width should be {PW}, but is {_PW}"
     return patches
@@ -111,9 +107,7 @@ def image_from_patches(patches: Tensor) -> Tensor:
         patches
         # We need to permute the dimensions so NHP is next to PH, and NWP is next to PW
         # (..., NHP, NWP, PH, PW) -> (..., NHP, PH, NWP, PW)
-        .permute(*range(_ND - 4), _ND - 4, _ND - 2, _ND - 3, _ND - 1).reshape(
-            *patches.shape[:-4], _H, _W
-        )
+        .permute(*range(_ND - 4), _ND - 4, _ND - 2, _ND - 3, _ND - 1).reshape(*patches.shape[:-4], _H, _W)
     )
 
 
@@ -181,13 +175,9 @@ def rgb2rawburst(
     if image_processing_params is None:
         image_processing_params = ImageProcessingParams()
 
-    image_processing_params.cam2rgb = image_processing_params.cam2rgb.to(
-        dtype=image.dtype, device=image.device
-    )
+    image_processing_params.cam2rgb = image_processing_params.cam2rgb.to(dtype=image.dtype, device=image.device)
 
-    image_processing_params.rgb2cam = image_processing_params.rgb2cam.to(
-        dtype=image.dtype, device=image.device
-    )
+    image_processing_params.rgb2cam = image_processing_params.rgb2cam.to(dtype=image.dtype, device=image.device)
 
     # Approximately inverts global tone mapping.
     if image_processing_params.smoothstep:

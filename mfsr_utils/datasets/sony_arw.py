@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Callable, Literal, Type, TypeVar, get_args
 
 import numpy as np
-import rawpy
+import rawpy  # type: ignore[import]
 import torch
 from torch import Tensor, nn
 from torch.utils.data.dataset import Dataset
@@ -73,16 +73,11 @@ class ArwImage:
             An ArwImage object.
         """
         with rawpy.imread(path.as_posix()) as raw:  # type: ignore
-            d: dict[str, Any] = {
-                k: getattr(raw, k) if k != "path" else path
-                for k in cls.__dataclass_fields__.keys()
-            }
+            d: dict[str, Any] = {k: getattr(raw, k) if k != "path" else path for k in cls.__dataclass_fields__.keys()}
 
             # Convert color_desc to a string
             d["color_desc"] = d["color_desc"].decode("utf-8")
-            assert d["color_desc"] in get_args(
-                ColorDesc
-            ), f"Unsupported color_desc {d['color_desc']}. "
+            assert d["color_desc"] in get_args(ColorDesc), f"Unsupported color_desc {d['color_desc']}. "
 
             # Convert raw_type to a string
             assert d["raw_type"].value == 0, f"Unsupported raw_type {d['raw_type']}"

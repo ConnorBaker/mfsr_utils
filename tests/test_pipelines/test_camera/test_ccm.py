@@ -20,9 +20,7 @@ from tests.utils import (
 
 ApplyCCMFnTy = Callable[[Tensor, Tensor], Tensor]
 ApplyCCMFnName = Literal["apply_ccm"]
-parametrize_apply_ccm_fn_name = pytest.mark.parametrize(
-    "apply_ccm_fn_name", get_args(ApplyCCMFnName)
-)
+parametrize_apply_ccm_fn_name = pytest.mark.parametrize("apply_ccm_fn_name", get_args(ApplyCCMFnName))
 
 
 def get_apply_ccm_fn(apply_ccm_fn_name: ApplyCCMFnName) -> ApplyCCMFnTy:

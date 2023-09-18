@@ -30,9 +30,7 @@ class NTIRESyntheticBurstTest2022(Dataset[_T], Downloadable):
     url: ClassVar[str] = "https://data.vision.ee.ethz.ch/bhatg/synburst_test_2022.zip"
     filename: ClassVar[str] = "ntire_synburst_test_2022.zip"
     dirname: ClassVar[str] = "ntire_synburst_test_2022"
-    mirrors: ClassVar[list[str]] = [
-        "https://storage.googleapis.com/bsrt-supplemental/synburst_test_2022.zip"
-    ]
+    mirrors: ClassVar[list[str]] = ["https://storage.googleapis.com/bsrt-supplemental/synburst_test_2022.zip"]
 
     data_dir: Path
     burst_size: int = 14

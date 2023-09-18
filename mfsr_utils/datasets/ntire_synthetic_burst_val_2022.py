@@ -8,7 +8,6 @@ from torch import Tensor, nn
 from torch.utils.data.dataset import Dataset
 
 from mfsr_utils.datasets.protocols.downloadable import Downloadable
-from mfsr_utils.datasets.utilities import MFSRData
 
 _T = TypeVar("_T")
 
@@ -28,13 +27,11 @@ class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):
     url: ClassVar[str] = "https://data.vision.ee.ethz.ch/bhatg/SyntheticBurstVal.zip"
     filename: ClassVar[str] = "ntire_synburst_validation_2022.zip"
     dirname: ClassVar[str] = "ntire_synburst_validation_2022"
-    mirrors: ClassVar[list[str]] = [
-        "https://storage.googleapis.com/bsrt-supplemental/SyntheticBurstVal.zip"
-    ]
+    mirrors: ClassVar[list[str]] = ["https://storage.googleapis.com/bsrt-supplemental/SyntheticBurstVal.zip"]
 
     data_dir: Path
     burst_size: int = 14
-    transform: Callable[[MFSRData], _T] = nn.Identity()
+    transform: Callable[[Tensor, Tensor], _T] = nn.Identity()
 
     def __post_init__(self) -> None:
         assert (
@@ -54,13 +51,7 @@ class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):
         """
         image_pngs: list[Tensor] = []
         for i in range(self.burst_size):
-            image_path = (
-                Path(self.data_dir)
-                / self.dirname
-                / "bursts"
-                / f"{index:04}"
-                / f"im_raw_{i:02}.png"
-            )
+            image_path = Path(self.data_dir) / self.dirname / "bursts" / f"{index:04}" / f"im_raw_{i:02}.png"
             image_file: Tensor = torchvision.io.read_file(image_path.as_posix())
 
             # TODO: Do we need to explicitly state the image read mode? These are bayered images
@@ -106,8 +97,7 @@ class NTIRESyntheticBurstValidation2022(Dataset[_T], Downloadable):
         """
         burst = self._read_burst(index)
         gt = self._read_gt(index)
-        d: MFSRData = MFSRData(burst, gt)
-        transformed: _T = self.transform(d)
+        transformed: _T = self.transform(burst, gt)
         return transformed
 
     def __len__(self) -> int:

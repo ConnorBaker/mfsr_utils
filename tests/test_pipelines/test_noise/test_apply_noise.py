@@ -21,9 +21,7 @@ from tests.utils import (
 
 ApplyNoiseFnTy = Callable[[Tensor, float, float], Tensor]
 ApplyNoiseFnName = Literal["apply_noise", "noise_module"]
-parametrize_apply_noise_fn_name = pytest.mark.parametrize(
-    "apply_noise_fn_name", get_args(ApplyNoiseFnName)
-)
+parametrize_apply_noise_fn_name = pytest.mark.parametrize("apply_noise_fn_name", get_args(ApplyNoiseFnName))
 
 
 def get_apply_noise_fn(apply_noise_fn_name: ApplyNoiseFnName) -> ApplyNoiseFnTy:

@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools >= 65", "wheel"]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
 
 [project]
 name = "mfsr_utils"
@@ -10,18 +11,24 @@ authors = [
     { name = "Connor Baker", email = "connorbaker01@gmail.com" },
 ]
 maintainers = [{ name = "Connor Baker", email = "connorbaker01@gmail.com" }]
-readme = "README.md"
-urls = { homepage = "https://github.com/connorbaker/mfsr_utils" }
+license.text = "MIT"
+urls.homepage = "https://github.com/connorbaker/mfsr_utils"
 requires-python = ">=3.10"
 dependencies = [
-    "torch>=1.8",
-    "torchvision>=0.9",
     "filelock>=3.9",
+    "rawpy>=0.18.1",
+    "torch>=1.8",
+    "torchvision>=0.9"
 ]
 
 [project.optional-dependencies]
-lint = ["black>=22.12.0", "flake8>=6.0.0", "isort>=5.11.4"]
-typecheck = ["pyright>=1.1.287", "mypy>=0.991"]
+dev = [
+    # Lint
+    "black>=22.12.0",
+    "ruff>=0.3.0",
+    # Typecheck
+    "mypy>=0.991",
+]
 test = [
     "pytest>=7.2.0",
     "pytest-xdist>=3.1.0",
@@ -29,19 +36,21 @@ test = [
     "hypothesis_torch_utils",
 ]
 
-[tool.setuptools]
-include-package-data = true
-package-dir = { mfsr_utils = "mfsr_utils" }
-package-data = { mfsr_utils = ["py.typed"] }
-
 [tool.black]
-line-length = 99
+line-length = 120
 target-version = ['py310']
 
-[tool.isort]
-profile = "black"
-line_length = 99
-py_version = "39" # 3.10 isn't supported yet
+[tool.ruff]
+select = [
+    # Pyflakes
+    "F",
+    # Pycodestyle
+    "E",
+    "W",
+    # isort
+    "I",
+]
+line-length = 120
 
 [tool.mypy]
 python_version = "3.10"
@@ -54,7 +63,6 @@ include = ["./mfsr_utils", "./tests"]
 pythonVersion = "3.10"
 pythonPlatform = "Linux"
 typeCheckingMode = "strict"
-useLibraryCodeForTypes = true
 
 [tool.pytest.ini_options]
 minversion = "7.0"

@@ -20,9 +20,7 @@ from tests.utils import (
 
 GammaFnTy = Callable[[Tensor], Tensor]
 GammaExpansionFnName = Literal["gamma_expansion"]
-parametrize_gamma_expansion_fn_name = pytest.mark.parametrize(
-    "gamma_expansion_fn_name", get_args(GammaExpansionFnName)
-)
+parametrize_gamma_expansion_fn_name = pytest.mark.parametrize("gamma_expansion_fn_name", get_args(GammaExpansionFnName))
 GammaCompressionFnName = Literal["gamma_compression"]
 parametrize_gamma_compression_fn_name = pytest.mark.parametrize(
     "gamma_compression_fn_name", get_args(GammaCompressionFnName)
@@ -40,9 +38,7 @@ def get_gamma_fn(gamma_fn_name: GammaFnName) -> GammaFnTy:
 
 
 GammaComposedFnName = Literal["expansion_then_compression", "compression_then_expansion"]
-parametrize_gamma_composed_fn_name = pytest.mark.parametrize(
-    "gamma_composed_fn_name", get_args(GammaComposedFnName)
-)
+parametrize_gamma_composed_fn_name = pytest.mark.parametrize("gamma_composed_fn_name", get_args(GammaComposedFnName))
 
 
 def get_gamma_composed_fn(

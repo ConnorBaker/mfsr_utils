@@ -96,8 +96,6 @@ def test_get_transform_mat_tensor_invariant(
 
     expected = torch.empty((2, 3), device=device, dtype=dtype)
 
-    actual = transform_mat_fn(
-        image_shape, translation, theta, shear_values, scale_factors, dtype, device
-    )
+    actual = transform_mat_fn(image_shape, translation, theta, shear_values, scale_factors, dtype, device)
     invariant_holds = invariant_fn(expected, actual)
     assert invariant_holds

@@ -14,10 +14,7 @@ def apply_rgb_gain(image: Tensor, rgb_gain: float, red_gain: float, blue_gain: f
     assert channels == 3 or channels == 4
     middle = [1.0] * (channels // 2)
 
-    gains = (
-        torch.tensor([red_gain, *middle, blue_gain], dtype=image.dtype, device=image.device)
-        * rgb_gain
-    )
+    gains = torch.tensor([red_gain, *middle, blue_gain], dtype=image.dtype, device=image.device) * rgb_gain
     gains = gains.view(-1, 1, 1)
 
     return (image * gains).clamp(0.0, 1.0)
