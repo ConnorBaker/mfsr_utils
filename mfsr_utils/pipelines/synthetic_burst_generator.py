@@ -318,6 +318,7 @@ def single2lrburst(
                 int(image_transformed.shape[-1] / downsample_factor),
             ],
             interpolation=InterpolationMode.BILINEAR,
+            antialias=True,
         )
 
         burst.append(image_transformed)
