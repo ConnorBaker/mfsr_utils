@@ -1,0 +1,31 @@
+name: CI
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_call:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: |
+          mkdir -p ~/.config/nixpkgs
+          cat <<EOF > ~/.config/nixpkgs/config.nix
+          {
+            allowUnfree = true;
+            cudaSupport = true;
+            cudaCapabilities = [ "8.9" ];
+            cudaForwardCompat = false;
+          }
+          EOF
+      - run: nix flake check --impure --accept-flake-config
