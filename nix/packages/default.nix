@@ -1,20 +1,12 @@
 {
-  perSystem = {
-    config,
-    inputs',
-    pkgs,
-    ...
-  }: {
+  perSystem = {pkgs, ...}: {
+    legacyPackages = pkgs;
     packages = {
-      libnvjpeg_2k = pkgs.callPackage ./libnvjpeg_2k.nix {};
-      dali = pkgs.callPackage ./dali.nix {
-        inherit (config.packages) libnvjpeg_2k;
-      };
-      mfsr_utils = pkgs.python3Packages.callPackage ./mfsr_utils.nix {
-        inherit (config.packages) rawpy;
-        inherit (inputs'.hypothesis_torch_utils.packages) hypothesis_torch_utils;
-      };
-      rawpy = pkgs.python3Packages.callPackage ./rawpy.nix {};
+      inherit (pkgs) libnvjpeg_2k;
+      inherit (pkgs.python3Packages) mfsr_utils rawpy;
+      # dali = pkgs.callPackage ./dali.nix {
+      #   inherit (config.packages) libnvjpeg_2k;
+      # };
     };
   };
 }

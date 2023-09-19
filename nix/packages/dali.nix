@@ -2,14 +2,12 @@
   cudaPackages,
   fetchFromGitHub,
   lib,
-  stdenv,
   symlinkJoin,
   # nativeBuildInputs
   cmake,
   ninja,
   pkg-config,
   python3,
-  python3Packages,
   llvmPackages_16,
   # buildInputs
   libnvjpeg_2k,

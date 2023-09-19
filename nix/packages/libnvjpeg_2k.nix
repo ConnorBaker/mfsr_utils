@@ -17,7 +17,7 @@
   hasStatic = true;
   hasSample = false;
 in
-  cudaPackages.backendStdenv.mkDerivation (finalAttrs: {
+  cudaPackages.backendStdenv.mkDerivation {
     pname = "libnvjpeg_2k";
     version = "0.7.0";
     strictDeps = true;
@@ -149,4 +149,4 @@ in
       # causes Nix to prefer that output over the others if outputSpecified isn't set).
       outputsToInstall = ["out"];
     };
-  })
+  }
